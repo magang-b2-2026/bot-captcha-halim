@@ -1,0 +1,37 @@
+# KOMDIGI captcha computer-use bot configuration
+# Schema ported from communiteyes-pro config.yaml (stealth + scheduling sections),
+# extended with Jev / solver-policy / retry sections for this bot.
+# Precedence: environment variables (.env) > this file > built-in defaults.
+
+solver_policy: hybrid   # inhouse | hybrid | api_first
+heavy_families:
+  - arkose
+  - geetest_v4
+  - recaptcha_enterprise
+
+interval_seconds: 1800  # ported from communiteyes-pro: safe mode pacing
+jitter_seconds: 180     # human-like scheduling jitter
+
+stealth:                # ported from communiteyes-pro scraper.stealth
+  headless: true
+  viewport_width: 1280
+  viewport_height: 800
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+  min_delay_ms: 500
+  max_delay_ms: 3000
+  scroll_pages: 3
+  session_rotation: true
+  proxy: ""              # optional socks5://127.0.0.1:9050 (pattern from communiteyes-pro login_via_vps.py)
+
+jev:                    # TypeSafe AI System One decision model
+  endpoint: "https://api.typesafe.ai/v1/systemone"
+  model: "jev-latest"
+  timeout_seconds: 30
+
+retry:
+  max_attempts: 4
+  backoff_base_seconds: 2.0
+
+# Flat LLM keys (LLM_BASE_URL, LLM_API_KEY, LLM_MODEL_VISION, LLM_MODEL_REASONING) and
+# secrets (TYPESAFE_API_KEY, SOLVER_API_KEY_2CAPTCHA) come from .env - see .env.example.
+# Model pins may also be set here (env wins): e.g. llm_model_vision: "..."

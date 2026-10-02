@@ -50,7 +50,7 @@
 
 ## Todos
 
-- [ ] 1. Bootstrap proyek KOMDIGI bot (Python 3.11+/uv, .gitignore-FIRST, .env.example, struktur paket)
+- [x] 1. Bootstrap proyek KOMDIGI bot (Python 3.11+/uv, .gitignore-FIRST, .env.example, struktur paket)
   - **References:** root `E:\Coding\Coding\KOMDIGI` (repo kosong, belum ada commit — verifikasi `git log` kosong); template templat: `pyproject.toml` (uv, ruff, basedpyright, pytest), paket `src/komdigi_bot/` (`__init__.py`, `config.py`, `logging.py`); `.env.example` berisi HANYA placeholder: `TYPESAFE_API_KEY=` (Jev console.typesafe.ai), `LLM_BASE_URL=` + `LLM_API_KEY=` (key OpenCode user, OpenAI-compatible), `SOLVER_API_KEY_2CAPTCHA=` (opsional, default kosong); `config/config.yaml` kosong akan diisi todo 2.
   - **Acceptance:** `uv sync` sukses; `uv run python -c "import komdigi_bot"` sukses; `git status` bersih; `cat .gitignore` memuat `.env`, `vendor-reference/`, `outputs/`, `.omo/evidence/`, `__pycache__/`, `.venv/`; commit pertama ada.
   - **QA happy:** `uv run pytest` (kosong → exit 0); **QA failure:** `git check-ignore .env` mengembalikan `.env` (buat file uji `.env` dummy lalu hapus — bukti `outputs/evidence/gitignore-proof.txt` berisi output perintah).

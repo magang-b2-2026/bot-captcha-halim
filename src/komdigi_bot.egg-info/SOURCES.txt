@@ -1,0 +1,10 @@
+pyproject.toml
+src/komdigi_bot/__init__.py
+src/komdigi_bot/config.py
+src/komdigi_bot/logging.py
+src/komdigi_bot.egg-info/PKG-INFO
+src/komdigi_bot.egg-info/SOURCES.txt
+src/komdigi_bot.egg-info/dependency_links.txt
+src/komdigi_bot.egg-info/requires.txt
+src/komdigi_bot.egg-info/top_level.txt
+tests/test_sanity.py

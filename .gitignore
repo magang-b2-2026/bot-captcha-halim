@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+vendor-reference/
+outputs/
+.omo/evidence/
+.ruff_cache/
+.pytest_cache/
+*.pyc
+.playwright-mcp/
+*.egg-info/.omo/run-continuation/

@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "active_work_id": "captcha-computeruse-bot-2026-10-01",
+  "works": {
+    "captcha-computeruse-bot-2026-10-01": {
+      "work_id": "captcha-computeruse-bot-2026-10-01",
+      "active_plan": ".omo/plans/captcha-computeruse-bot.md",
+      "plan_name": "captcha-computeruse-bot",
+      "session_ids": ["codex:ses_f07ba3dbbffejlOPFanBe1M7bU"],
+      "status": "active",
+      "worktree_path": null
+    }
+  }
+}

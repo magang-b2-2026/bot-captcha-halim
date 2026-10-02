@@ -1,15 +1,15 @@
 {
-  "rotation_count": 17,
-  "last_rotation": 1790945351.9760332,
+  "rotation_count": 35,
+  "last_rotation": 1790946720.0625203,
   "current_profile": {
-    "index": 17,
+    "index": 35,
     "viewport": [
-      1366,
-      768
+      1280,
+      800
     ],
     "platform": "Win32",
     "language": "id-ID",
-    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "profile_id": "profile-0"
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "profile_id": "profile-2"
   }
 }

@@ -27,6 +27,12 @@ target-version = "py311"
 include = ["src", "tests"]
 exclude = ["vendor-reference", ".venv", "outputs"]
 
+[[tool.basedpyright.executionEnvironments]]
+root = "tests"
+reportAny = false
+reportPrivateUsage = false
+reportUnusedCallResult = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

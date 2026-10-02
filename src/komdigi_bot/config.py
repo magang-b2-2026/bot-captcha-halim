@@ -82,7 +82,8 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model_vision: str = ""
     llm_model_reasoning: str = ""
-    solver_api_key_2captcha: str = ""
+    twocaptcha_api_key: str = ""        # 2captcha.com API key (for api_fallback engine)
+    solver_api_key_2captcha: str = ""   # legacy alias kept for backward compat
 
     stealth: StealthConfig = Field(default_factory=StealthConfig)
     jev: JevConfig = Field(default_factory=JevConfig)

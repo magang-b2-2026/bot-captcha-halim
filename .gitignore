@@ -8,4 +8,5 @@ outputs/
 .pytest_cache/
 *.pyc
 .playwright-mcp/
-*.egg-info/.omo/run-continuation/
+*.egg-info/
+.omo/run-continuation/

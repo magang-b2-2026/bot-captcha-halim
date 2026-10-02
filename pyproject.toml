@@ -23,6 +23,12 @@ dev = [
 line-length = 100
 target-version = "py311"
 
+[tool.ruff.lint]
+# S110/S112: try-except-pass/continue are intentional best-effort fallbacks in Playwright helpers
+# BLE001: broad exception catches keep the bot running on unexpected Playwright errors
+# SLF001: accessing _vision_model/_reasoning_model for evidence/logging is intentional
+per-file-ignores = { "src/komdigi_bot/solvers/*.py" = ["S110", "S112", "BLE001", "SLF001"] }
+
 [tool.basedpyright]
 include = ["src", "tests"]
 exclude = ["vendor-reference", ".venv", "outputs"]

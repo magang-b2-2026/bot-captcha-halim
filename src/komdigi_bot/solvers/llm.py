@@ -81,6 +81,8 @@ class LLMClient:
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
+        # Fallback providers: list of (base_url, api_key) tried in order on failure
+        self._fallbacks: list[tuple[str, str]] = []
 
     # ------------------------------------------------------------------
     # Public API
@@ -157,32 +159,76 @@ class LLMClient:
     # ------------------------------------------------------------------
 
     def _chat(self, payload: dict[str, Any]) -> str:
-        url = f"{self._base_url}/chat/completions"
-        try:
-            resp = httpx.post(url, headers=self._headers, content=json.dumps(payload), timeout=self._timeout)
-        except httpx.TimeoutException as exc:
-            raise LLMAPIError(f"LLM request timed out after {self._timeout}s") from exc
+        """Send chat completion request with automatic fallback to secondary providers."""
+        primary_url = f"{self._base_url}/chat/completions"
 
-        if not resp.is_success:
-            raise LLMAPIError(
-                f"LLM API {resp.status_code}: {resp.text[:300]}"
-            )
+        # Build provider list: primary first, then each fallback
+        providers: list[tuple[str, dict[str, str]]] = [
+            (primary_url, self._headers)
+        ]
+        for fb_url, fb_key in self._fallbacks:
+            providers.append((
+                f"{fb_url.rstrip('/')}/chat/completions",
+                {"Authorization": f"Bearer {fb_key}", "Content-Type": "application/json"},
+            ))
 
-        try:
-            body = resp.json()
-            return str(body["choices"][0]["message"]["content"]).strip()
-        except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
-            raise LLMAPIError(f"LLM response schema unexpected: {exc} — raw={resp.text[:200]}") from exc
+        last_error: Exception | None = None
+        for attempt_idx, (url, headers) in enumerate(providers):
+            try:
+                resp = httpx.post(
+                    url,
+                    headers=headers,
+                    content=json.dumps(payload),
+                    timeout=self._timeout,
+                )
+            except httpx.TimeoutException as exc:
+                last_error = LLMAPIError(f"LLM request timed out after {self._timeout}s (provider #{attempt_idx})")
+                logger.warning("LLM provider #%d timeout, trying fallback…", attempt_idx)
+                continue
+            except httpx.RequestError as exc:
+                last_error = LLMAPIError(f"LLM connection error (provider #{attempt_idx}): {exc}")
+                logger.warning("LLM provider #%d connection error, trying fallback…", attempt_idx)
+                continue
+
+            if not resp.is_success:
+                last_error = LLMAPIError(f"LLM API {resp.status_code} (provider #{attempt_idx}): {resp.text[:300]}")
+                logger.warning("LLM provider #%d returned %s, trying fallback…", attempt_idx, resp.status_code)
+                continue
+
+            try:
+                body = resp.json()
+                return str(body["choices"][0]["message"]["content"]).strip()
+            except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+                last_error = LLMAPIError(
+                    f"LLM response schema unexpected (provider #{attempt_idx}): {exc} — raw={resp.text[:200]}"
+                )
+                continue
+
+        # All providers exhausted
+        raise last_error or LLMAPIError("All LLM providers failed — check .env configuration")
 
 
 def llm_from_settings() -> LLMClient:
-    """Construct :class:`LLMClient` from the process-wide settings."""
+    """Construct :class:`LLMClient` from the process-wide settings.
+
+    Wires Vikey.ai as primary provider with the local OpenCode gateway
+    Wires Google AI Studio as primary provider (free 1500 req/day) with
+    Vikey.ai as automatic fallback when primary quota is exhausted or fails.
+    """
     from komdigi_bot.config import get_settings
 
     s = get_settings()
-    return LLMClient(
+    client = LLMClient(
         base_url=s.llm_base_url,
         api_key=s.llm_api_key,
         vision_model=s.llm_model_vision,
         reasoning_model=s.llm_model_reasoning,
     )
+    # Wire Vikey.ai as fallback when configured
+    if s.llm_fallback_base_url and s.llm_fallback_api_key:
+        client._fallbacks = [(s.llm_fallback_base_url, s.llm_fallback_api_key)]
+        logger.debug(
+            "LLM fallback provider configured: %s",
+            s.llm_fallback_base_url,
+        )
+    return client

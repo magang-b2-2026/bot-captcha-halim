@@ -82,6 +82,11 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model_vision: str = ""
     llm_model_reasoning: str = ""
+    # Fallback LLM provider (activated automatically when primary fails/quota exceeded)
+    llm_fallback_base_url: str = ""
+    llm_fallback_api_key: str = ""
+    llm_fallback_model_vision: str = "anthropic/claude-fable-5"
+    llm_fallback_model_reasoning: str = "deepseek/deepseek-v4.1-flash"
     twocaptcha_api_key: str = ""        # 2captcha.com API key (for api_fallback engine)
     solver_api_key_2captcha: str = ""   # legacy alias kept for backward compat
 

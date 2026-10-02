@@ -226,9 +226,15 @@ class Orchestrator:
         evidence_dir: Path,
         t0: float,
     ) -> RunResult:
-        # Navigate
-        _ = page.goto(url, wait_until="networkidle", timeout=30_000)
-        time.sleep(1.0)
+        # Navigate — use domcontentloaded first to handle heavy pages like Cloudflare Turnstile
+        # that never reach networkidle due to persistent polling/challenge JS
+        try:
+            _ = page.goto(url, wait_until="domcontentloaded", timeout=45_000)
+        except Exception:
+            # If even domcontentloaded times out, try without waiting
+            _ = page.goto(url, wait_until="commit", timeout=60_000)
+        # Allow JS challenge scripts to settle (Cloudflare/GeeTest need extra time)
+        time.sleep(2.5)
 
         # Triage
         html = page.content()
@@ -272,7 +278,8 @@ class Orchestrator:
                 if attempt_n < self._max_retries:
                     time.sleep(1.5)
                     with contextlib.suppress(Exception):
-                        _ = page.reload(wait_until="networkidle", timeout=20_000)
+                        _ = page.reload(wait_until="domcontentloaded", timeout=30_000)
+                    time.sleep(2.0)
 
         # API fallback (hybrid policy only)
         if (
@@ -286,6 +293,27 @@ class Orchestrator:
             result.attempts.append(attempt)
             if attempt.passed:
                 result.final_status = SolveStatus.PASS
+
+        # Chrome CDP fallback — Turnstile/GeeTest/Arkose tanpa 2captcha key
+        # Chrome asli fingerprint → auto-pass pada kebanyakan skenario
+        if (
+            result.final_status != SolveStatus.PASS
+            and routing.family in {"turnstile", "geetest", "arkose"}
+        ):
+            try:
+                from komdigi_bot.service.chrome_cdp_solver import ChromeCDPSolver
+                logger.info(
+                    "Orchestrator[%s]: Chrome CDP fallback (family=%s)",
+                    run_id, routing.family,
+                )
+                cdp_attempt = ChromeCDPSolver(url=url).solve(page, evidence_dir)
+                result.attempts.append(cdp_attempt)
+                if cdp_attempt.passed:
+                    result.final_status = SolveStatus.PASS
+            except Exception as cdp_exc:
+                logger.warning(
+                    "Orchestrator[%s]: Chrome CDP failed: %s", run_id, cdp_exc
+                )
 
         return result
 

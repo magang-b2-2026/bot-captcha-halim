@@ -47,6 +47,16 @@ BENCHMARK_TARGETS: list[dict[str, str]] = [
     {"family": "turnstile", "url": "https://2captcha.com/demo/cloudflare-turnstile"},
 ]
 
+# Target pages on solvecaptcha.com/demo — user-specified test site
+SOLVECAPTCHA_TARGETS: list[dict[str, str]] = [
+    {"family": "image", "url": "https://solvecaptcha.com/demo/image-captcha"},
+    {"family": "text", "url": "https://solvecaptcha.com/demo/text-captcha"},
+    {"family": "recaptcha", "url": "https://solvecaptcha.com/demo/recaptcha-v2"},
+    {"family": "turnstile", "url": "https://solvecaptcha.com/demo/cloudflare-turnstile"},
+    {"family": "geetest", "url": "https://solvecaptcha.com/demo/geetest"},
+]
+
+
 
 # ---------------------------------------------------------------------------
 # Stats
@@ -108,28 +118,29 @@ def run_benchmark(
     runs_per_target: int = 3,
     families: list[str] | None = None,
     headless: bool = True,
+    targets: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Run the benchmark and return a results dict."""
-    targets = BENCHMARK_TARGETS
+    all_targets = targets if targets is not None else BENCHMARK_TARGETS
     if families:
-        targets = [t for t in targets if t["family"] in families]
+        all_targets = [t for t in all_targets if t["family"] in families]
 
     orch = Orchestrator(max_retries=2, headless=headless)
     stats: dict[str, FamilyStats] = {
         t["family"]: FamilyStats(family=t["family"], url=t["url"])
-        for t in targets
+        for t in all_targets
     }
 
-    total_runs = len(targets) * runs_per_target
+    total_runs = len(all_targets) * runs_per_target
     done = 0
 
-    for target in targets:
+    for target in all_targets:
         family = target["family"]
         url = target["url"]
         logger.info("Benchmark: starting %s (%d runs)", family, runs_per_target)
 
         for i in range(runs_per_target):
-            logger.info("  Run %d/%d …", i + 1, runs_per_target)
+            logger.info("  Run %d/%d ...", i + 1, runs_per_target)
             try:
                 result = orch.run(url)
                 stats[family].record(result)
@@ -179,15 +190,28 @@ def main() -> int:
     parser.add_argument("--runs", type=int, default=3, help="Runs per target (default 3)")
     parser.add_argument("--families", default="", help="Comma-separated families to test (default all)")
     parser.add_argument("--no-headless", action="store_true", help="Run with visible browser")
+    parser.add_argument(
+        "--site",
+        choices=["2captcha", "solvecaptcha"],
+        default="solvecaptcha",
+        help="Demo site to benchmark against (default: solvecaptcha)",
+    )
     args = parser.parse_args()
 
     families = [f.strip() for f in args.families.split(",") if f.strip()] or None
 
-    logger.info("Starting benchmark: runs=%d families=%s", args.runs, families or "all")
+    # Select target set
+    site_targets = SOLVECAPTCHA_TARGETS if args.site == "solvecaptcha" else BENCHMARK_TARGETS
+
+    logger.info(
+        "Starting benchmark: site=%s runs=%d families=%s",
+        args.site, args.runs, families or "all",
+    )
     summary = run_benchmark(
         runs_per_target=args.runs,
         families=families,
         headless=not args.no_headless,
+        targets=site_targets,
     )
 
     _EVIDENCE_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -199,3 +223,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

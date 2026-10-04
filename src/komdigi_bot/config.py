@@ -10,7 +10,7 @@ fields that mirror ``.env.example`` names exactly and are never defaulted.
 """
 
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 from pydantic_settings import (
@@ -89,10 +89,15 @@ class Settings(BaseSettings):
     llm_fallback_model_reasoning: str = "deepseek/deepseek-v4.1-flash"
     twocaptcha_api_key: str = ""        # 2captcha.com API key (for api_fallback engine)
     solver_api_key_2captcha: str = ""   # legacy alias kept for backward compat
+    proxy: str = ""                     # SOCKS5/HTTP egress proxy (e.g. socks5://user:pass@host:port)
 
     stealth: StealthConfig = Field(default_factory=StealthConfig)
     jev: JevConfig = Field(default_factory=JevConfig)
     retry: RetryConfig = Field(default_factory=RetryConfig)
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.proxy and not self.stealth.proxy:
+            self.stealth.proxy = self.proxy
 
     @override
     @classmethod

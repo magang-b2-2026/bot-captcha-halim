@@ -30,14 +30,19 @@ logger = logging.getLogger(__name__)
 _IMAGE_SELECTORS = [
     "img[alt*='captcha' i]",
     "img[src*='captcha' i]",
-    ".captcha img",
+    "#captcha",
     "#captchaImage",
+    ".captcha img",
     "img.captcha",
     "img[alt*='normal captcha' i]",
+    "img[src*='get_captcha' i]",
+    "img[src*='captcha.php' i]",
 ]
 
 _INPUT_SELECTORS = [
     "input[name*='captcha' i]",
+    "input[id*='captcha' i]",
+    "input[name*='keystring' i]",
     "input[placeholder*='answer' i]",
     "input[placeholder*='code' i]",
     "input[type='text']",
@@ -48,13 +53,14 @@ _SUBMIT_SELECTORS = [
     "button:has-text('Check')",
     "button:has-text('Submit')",
     "input[type='submit']",
+    "input[value*='submit' i]",
+    "input[value*='send' i]",
 ]
 
 _VISION_SYSTEM = (
-    "You are a CAPTCHA transcription engine. "
-    "Look at the image and return ONLY the characters shown — "
-    "no spaces, no punctuation, exact case as displayed. "
-    "If you see 5 characters, return exactly 5 characters."
+    "You are a high-accuracy CAPTCHA decoding engine. "
+    "If the image contains standard text/letters/digits, return ONLY the characters shown with no spaces or punctuation. "
+    "If the image contains an arithmetic problem or equation (e.g. '3 + 4' or '7 - 2 = ?'), calculate and return ONLY the resulting number."
 )
 
 
@@ -95,7 +101,11 @@ class ImageOCRSolver(BaseSolver):
         try:
             raw = self._llm.ask_vision(
                 image_path=img_path,
-                prompt="Transcribe the CAPTCHA text in this image. Return ONLY the characters, nothing else.",
+                prompt=(
+                    "Transcribe the CAPTCHA text in this image. "
+                    "If it is an arithmetic math equation (e.g. 5+3 or 9-4), solve it and return ONLY the numeric result. "
+                    "Otherwise return ONLY the exact characters shown, with no spaces."
+                ),
                 system=_VISION_SYSTEM,
             )
         except Exception as exc:

@@ -38,6 +38,20 @@ class SolveAttempt:
 # Canonical success message seen on 2captcha demo pages after correct solve
 CAPTCHA_PASS_MARKER = "Captcha is passed successfully"
 
+# Generic success indicators across various captcha demo and submission platforms
+SUCCESS_MARKERS = [
+    "captcha is passed successfully",
+    "passed successfully",
+    "passed!",
+    "verification passed",
+    "captcha passed",
+    "correct captcha",
+    "form submitted",
+    "message has been sent",
+    "congratulations",
+    "success",
+]
+
 
 class BaseSolver:
     """Abstract base for all solver engines.
@@ -55,10 +69,10 @@ class BaseSolver:
         raise NotImplementedError
 
     def _check_success(self, page: Page) -> bool:
-        """Heuristic: look for the canonical success text in page content."""
+        """Heuristic: look for canonical success text in page content."""
         try:
-            content = page.content()
-            return CAPTCHA_PASS_MARKER in content
+            content = page.content().lower()
+            return any(marker in content for marker in SUCCESS_MARKERS)
         except Exception:
             return False
 

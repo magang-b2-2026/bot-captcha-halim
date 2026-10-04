@@ -169,10 +169,21 @@ class Orchestrator:
         if self._llm:
             self._registry = _build_solver_registry(self._llm)
 
-        # Router
+        # Router (with optional Jev SystemOne client)
+        jev_client = None
+        if self._settings.typesafe_api_key:
+            try:
+                from komdigi_bot.decision.jev import JevClient
+
+                jev_client = JevClient(api_key=self._settings.typesafe_api_key)
+                logger.info("Jev SystemOne client enabled for pre-gating and engine confirmation")
+            except Exception as exc:
+                logger.warning("Failed to initialize JevClient: %s", exc)
+
         self._router = CaptchaRouter(
             detector=CaptchaDetector(),
-            jev_client=None,  # Jev optional — requires key
+            jev_client=jev_client,
+            heavy_families=self._settings.heavy_families,
         )
 
     # ------------------------------------------------------------------

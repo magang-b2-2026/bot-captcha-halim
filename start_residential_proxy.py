@@ -16,6 +16,11 @@ import logging.handlers
 import sys
 from pathlib import Path
 
+# Ensure src/ is in sys.path
+_SRC_DIR = Path(__file__).resolve().parent / "src"
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
 from komdigi_bot.service.residential_proxy import ResidentialSocks5Server
 
 
@@ -36,13 +41,14 @@ def setup_logging(log_dir: Path = Path("outputs/logs")) -> None:
     ))
     root.addHandler(fh)
 
-    # Stdout handler
-    sh = logging.StreamHandler(sys.stdout)
-    sh.setFormatter(logging.Formatter(
-        "%(asctime)s %(levelname)-8s %(name)s: %(message)s",
-        datefmt="%H:%M:%S"
-    ))
-    root.addHandler(sh)
+    # Stdout handler (only if console is attached)
+    if sys.stdout is not None:
+        sh = logging.StreamHandler(sys.stdout)
+        sh.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+            datefmt="%H:%M:%S"
+        ))
+        root.addHandler(sh)
 
 
 def main() -> None:
@@ -60,19 +66,12 @@ def main() -> None:
     logger.info("Tailscale Access: socks5://100.118.42.78:%d", args.port)
     logger.info("=" * 60)
 
-    server = ResidentialSocks5Server(host=args.host, port=args.port)
+    from komdigi_bot.service.residential_proxy import run_server
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(server.start())
-        loop.run_forever()
-    except KeyboardInterrupt:
-        logger.info("Received shutdown signal. Stopping proxy...")
-        loop.run_until_complete(server.stop())
-    finally:
-        loop.close()
-        logger.info("Proxy server shutdown complete.")
+        asyncio.run(run_server(host=args.host, port=args.port))
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Proxy server shutdown signal received.")
 
 
 if __name__ == "__main__":

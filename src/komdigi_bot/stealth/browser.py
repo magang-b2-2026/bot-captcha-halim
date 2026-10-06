@@ -112,6 +112,13 @@ class StealthBrowser:
             "--no-sandbox",
             "--disable-dev-shm-usage",
             f"--window-size={self._cfg.viewport_width},{self._cfg.viewport_height}",
+            "--host-resolver-rules="
+            "MAP democaptcha.com 77.222.40.38, "
+            "MAP *.democaptcha.com 77.222.40.38, "
+            "MAP 2captcha.com 104.26.10.235, "
+            "MAP *.2captcha.com 104.26.10.235, "
+            "MAP solvecaptcha.com 172.67.182.49, "
+            "MAP *.solvecaptcha.com 172.67.182.49",
         ]
 
         browser_kwargs: dict[str, Any] = {

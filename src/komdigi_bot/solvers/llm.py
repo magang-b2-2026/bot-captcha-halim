@@ -162,23 +162,37 @@ class LLMClient:
         """Send chat completion request with automatic fallback to secondary providers."""
         primary_url = f"{self._base_url}/chat/completions"
 
-        # Build provider list: primary first, then each fallback
-        providers: list[tuple[str, dict[str, str]]] = [
-            (primary_url, self._headers)
+        # Determine whether this is vision or text by checking payload message contents
+        is_vision = any(
+            isinstance(m.get("content"), list)
+            for m in payload.get("messages", [])
+        )
+
+        # Build provider list: (url, headers, model_to_use)
+        providers: list[tuple[str, dict[str, str], str]] = [
+            (primary_url, self._headers, payload.get("model", self._vision_model if is_vision else self._reasoning_model))
         ]
-        for fb_url, fb_key in self._fallbacks:
+        for fb in self._fallbacks:
+            fb_url = fb[0]
+            fb_key = fb[1]
+            fb_vis = fb[2] if len(fb) > 2 else self._vision_model
+            fb_rea = fb[3] if len(fb) > 3 else self._reasoning_model
+            chosen_model = fb_vis if is_vision else fb_rea
             providers.append((
                 f"{fb_url.rstrip('/')}/chat/completions",
                 {"Authorization": f"Bearer {fb_key}", "Content-Type": "application/json"},
+                chosen_model,
             ))
 
         last_error: Exception | None = None
-        for attempt_idx, (url, headers) in enumerate(providers):
+        for attempt_idx, (url, headers, model_name) in enumerate(providers):
+            req_payload = dict(payload)
+            req_payload["model"] = model_name
             try:
                 resp = httpx.post(
                     url,
                     headers=headers,
-                    content=json.dumps(payload),
+                    content=json.dumps(req_payload),
                     timeout=self._timeout,
                 )
             except httpx.TimeoutException as exc:
@@ -211,9 +225,8 @@ class LLMClient:
 def llm_from_settings() -> LLMClient:
     """Construct :class:`LLMClient` from the process-wide settings.
 
-    Wires Vikey.ai as primary provider with the local OpenCode gateway
-    Wires Google AI Studio as primary provider (free 1500 req/day) with
-    Vikey.ai as automatic fallback when primary quota is exhausted or fails.
+    Wires configured primary provider with automatic fallback to secondary
+    providers (Google AI Studio / Vikey.ai) with their respective model slugs.
     """
     from komdigi_bot.config import get_settings
 
@@ -224,11 +237,19 @@ def llm_from_settings() -> LLMClient:
         vision_model=s.llm_model_vision,
         reasoning_model=s.llm_model_reasoning,
     )
-    # Wire Vikey.ai as fallback when configured
     if s.llm_fallback_base_url and s.llm_fallback_api_key:
-        client._fallbacks = [(s.llm_fallback_base_url, s.llm_fallback_api_key)]
+        client._fallbacks = [
+            (
+                s.llm_fallback_base_url,
+                s.llm_fallback_api_key,
+                s.llm_fallback_model_vision or s.llm_model_vision,
+                s.llm_fallback_model_reasoning or s.llm_model_reasoning,
+            )
+        ]
         logger.debug(
-            "LLM fallback provider configured: %s",
+            "LLM fallback provider configured: %s (models: %s / %s)",
             s.llm_fallback_base_url,
+            s.llm_fallback_model_vision,
+            s.llm_fallback_model_reasoning,
         )
     return client

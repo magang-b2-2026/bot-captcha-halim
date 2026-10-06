@@ -119,19 +119,71 @@ Sistem menerapkan arsitektur *Decoupled Tool Selection and Execution* (Tri-Tier 
 
 ## Arsitektur Hybrid
 
-Bot mendukung dua model penyebaran produksi:
+Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur Hybrid (VPS 24/7 + Mini PC Egress Node)**:
 
-| Komponen | Opsi 1: Mini PC Residential Node | Opsi 2: VPS Singapore + Egress Proxy |
+| Komponen | Opsi 1: Mini PC Standalone Node | Opsi 2: Hybrid VPS 24/7 + Mini PC Residential Egress (Rekomendasi) |
 |---|---|---|
-| **Lokasi Service & Worker** | Windows Mini PC Lokal | Ubuntu 22.04 LTS (Tencent Cloud Singapore) |
-| **Jarak ke 9router LLM** | Lintas negara (~35-50ms) | Intra-datacenter (~1-2ms) |
-| **Reputasi IP Browser** | Residensial Asli (Sangat Terpercaya) | Datacenter IP diarahkan ke Residential Proxy |
-| **Bypass Anti-Bot** | 100% via Chrome fisik lokal | 100% via SOCKS5 proxy residensial |
-| **Konfigurasi Proxy** | Opsional (`PROXY=""`) | Wajib (`PROXY="socks5://user:pass@host:port"`) |
+| **Lokasi Worker / Service** | Windows Mini PC Lokal | Ubuntu 22.04 LTS (VPS Tencent Cloud Singapore) |
+| **Inference 9router LLM** | Lintas negara (~35-50ms) | Intra-datacenter (~1-2ms ultralow latency) |
+| **Reputasi IP Browser** | Residensial Asli (Sangat Terpercaya) | Egress di-tunnel ke IP Residensial Mini PC via Tailscale |
+| **Konektivitas Antar-Node** | Standalone | Private Mesh WireGuard Tailscale (`100.118.42.78` <-> `100.66.99.77`) |
+| **Bypass Anti-Bot** | 100% via Chrome fisik lokal | 100% via SOCKS5 proxy residensial & remote CDP |
+| **Konfigurasi Proxy** | Opsional (`PROXY=""`) | Wajib (`PROXY="socks5://100.118.42.78:1080"`) |
 
-*Catatan: Parameter `proxy` diatur langsung pada berkas `.env` dan secara otomatis diteruskan ke `StealthConfig.proxy` saat inisialisasi sistem.*
+### Diagram Topologi Hybrid
 
----
+```text
++-----------------------------------------------------------------------------------+
+|                           PRIVATE TAILSCALE MESH NETWORK                          |
+|                                                                                   |
+|  +-------------------------------------+   SOCKS5   +--------------------------+  |
+|  |       VPS SINGAPORE (24/7 Core)     |  Tunnel    |    MINI PC GMKTEC M6     |  |
+|  |   IP: 100.66.99.77 (43.128.69.86)   |  (P2P)     |     IP: 100.118.42.78    |  |
+|  |                                     | ---------> |                          |  |
+|  | - PM2 Daemon: komdigi-bot-worker    |   :1080    | - start_residential_     |  |
+|  | - Orchestrator & Task Queue         |            |   proxy.py (Port 1080)   |  |
+|  | - Jev System 1 Decision Gate        |            | - Real Chrome CDP Engine |  |
+|  | - Local 9router LLM (Port 20128)    |            |   (Port 9224)            |  |
+|  |   Latency: 1-2ms                    |            | - Telkom/IndiHome Egress |  |
+|  +-------------------------------------+            +--------------------------+  |
+|                     |                                             |               |
++---------------------|---------------------------------------------|---------------+
+                      |                                             |
+                      v (Inference)                                 v (Web Egress)
+             +-----------------+                           +------------------+
+             | 9router LLM API |                           | Target Websites  |
+             | (Tencent Cloud) |                           | (Democaptcha dll)|
+             +-----------------+                           +------------------+
+```
+
+### Panduan Implementasi & Deployment
+
+1. **Jalankan SOCKS5 Residential Proxy di Mini PC**:
+   ```powershell
+   # Menjalankan proxy daemon di port 1080 (bind ke seluruh interface/Tailscale)
+   uv run python start_residential_proxy.py --host 0.0.0.0 --port 1080
+   
+   # Atau gunakan watchdog batch script:
+   .\run_residential_proxy.bat
+   ```
+
+2. **Deploy Worker 24/7 di VPS Singapore**:
+   ```bash
+   # Masuk ke VPS Singapore via SSH Tailscale
+   ssh ubuntu@100.66.99.77
+   
+   # Jalankan skrip instalasi dan deployment otomatis
+   curl -fsSL https://raw.githubusercontent.com/naufalhalims/komdigi-bot/master/deploy/setup_vps.sh | bash
+   # Atau jika repo sudah ada:
+   cd /home/ubuntu/apps/komdigi-bot && bash deploy/setup_vps.sh
+   ```
+
+3. **Verifikasi Egress IP dari VPS**:
+   ```bash
+   # Menjalankan diagnostik untuk memastikan IP publik VPS terdeteksi sebagai IP Mini PC
+   python deploy/verify_egress.py socks5://100.118.42.78:1080
+   ```
+
 
 ## Hasil Pengujian Tantangan
 

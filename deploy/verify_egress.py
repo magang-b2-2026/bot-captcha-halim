@@ -15,18 +15,17 @@ def test_egress(proxy_url: str | None = None) -> None:
 
     try:
         with httpx.Client(proxy=proxy_url, timeout=15.0) as client:
-            resp = client.get("https://ipinfo.io/json")
+            resp = client.get("https://api.ipify.org?format=json")
             if resp.status_code == 200:
                 data = resp.json()
                 print("--- Egress Diagnostic ---")
-                print(f"IP:      {data.get('ip')}")
-                print(f"City:    {data.get('city')}")
-                print(f"Region:  {data.get('region')}")
-                print(f"Country: {data.get('country')}")
-                print(f"Org/ISP: {data.get('org')}")
+                print(f"Public Egress IP: {data.get('ip')}")
                 print("-------------------------")
             else:
-                print(f"Error: HTTP {resp.status_code} - {resp.text}")
+                resp2 = client.get("https://httpbin.org/ip")
+                print("--- Egress Diagnostic ---")
+                print(f"Response: {resp2.text}")
+                print("-------------------------")
     except Exception as exc:
         print(f"Failed to connect via proxy: {exc}")
         sys.exit(1)

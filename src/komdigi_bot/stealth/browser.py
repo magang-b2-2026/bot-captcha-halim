@@ -15,12 +15,15 @@ the KOMDIGI captcha computer-use bot.  Key changes from the upstream version:
 
 from __future__ import annotations
 
+import logging
 import random
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from playwright.sync_api import (
     Browser,
@@ -129,7 +132,15 @@ class StealthBrowser:
         if self._cfg.proxy:
             browser_kwargs["proxy"] = {"server": self._cfg.proxy}
 
-        self._browser = self._playwright.chromium.launch(**browser_kwargs)
+        try:
+            self._browser = self._playwright.chromium.launch(**browser_kwargs)
+        except Exception as exc:
+            if browser_kwargs.get("channel") == "chrome":
+                logger.warning("Google Chrome binary not found, falling back to bundled Chromium: %s", exc)
+                browser_kwargs.pop("channel", None)
+                self._browser = self._playwright.chromium.launch(**browser_kwargs)
+            else:
+                raise
 
         # Rotate to the next profile
         session = self.session_mgr.rotate()

@@ -25,8 +25,8 @@ import httpx
 logger = logging.getLogger(__name__)
 
 _BASE = "https://api.2captcha.com"
-_DEFAULT_POLL_INTERVAL = 5.0   # seconds between status checks
-_DEFAULT_MAX_WAIT = 120.0      # give up after 2 minutes
+_DEFAULT_POLL_INTERVAL = 5.0  # seconds between status checks
+_DEFAULT_MAX_WAIT = 120.0  # give up after 2 minutes
 
 
 class TwoCaptchaError(RuntimeError):
@@ -56,8 +56,7 @@ class TwoCaptchaClient:
     ) -> None:
         if not api_key:
             raise TwoCaptchaError(
-                "TWOCAPTCHA_API_KEY is empty — obtain one from 2captcha.com "
-                "and add it to .env"
+                "TWOCAPTCHA_API_KEY is empty — obtain one from 2captcha.com and add it to .env"
             )
         self._api_key = api_key
         self._poll_interval = poll_interval

@@ -57,7 +57,7 @@ _FAMILIES_ORDERED = [
     "hcaptcha",
     "arkose",
     "geetest",
-    "text",    # text before image: solvecaptcha.com text-captcha shares image DOM (ts-box/ts-form)
+    "text",  # text before image: solvecaptcha.com text-captcha shares image DOM (ts-box/ts-form)
     "image",
     "rotate",
     "click",
@@ -98,21 +98,21 @@ _RULES: dict[str, list[tuple[re.Pattern[str], float]]] = {
     ],
     "image": [
         # 2captcha demo
-        (re.compile(r'2captcha\.com/demo/normal', re.IGNORECASE), 1.2),
+        (re.compile(r"2captcha\.com/demo/normal", re.IGNORECASE), 1.2),
         (re.compile(r'alt=["\']normal captcha', re.IGNORECASE), 0.8),
         (re.compile(r"captcha.*image|image.*captcha", re.IGNORECASE), 0.4),
         (re.compile(r"Enter.*answer.*here|captchaCode|captcha_input", re.IGNORECASE), 0.3),
         # democaptcha.com demo
-        (re.compile(r'demo-form-eng/(math-)?image', re.IGNORECASE), 1.2),
-        (re.compile(r'democaptcha.*image', re.IGNORECASE), 1.0),
-        (re.compile(r'get_captcha\.php', re.IGNORECASE), 0.8),
+        (re.compile(r"demo-form-eng/(math-)?image", re.IGNORECASE), 1.2),
+        (re.compile(r"democaptcha.*image", re.IGNORECASE), 1.0),
+        (re.compile(r"get_captcha\.php", re.IGNORECASE), 0.8),
         # solvecaptcha.com image-captcha specific signatures
         (re.compile(r'id=["\']ts-box["\']', re.IGNORECASE), 0.6),
         (re.compile(r'id=["\']ts-form["\']', re.IGNORECASE), 0.5),
         (re.compile(r'id=["\']ts_submit["\']', re.IGNORECASE), 0.5),
-        (re.compile(r'captcha\.jpg', re.IGNORECASE), 0.5),
-        (re.compile(r'Image Captcha demo', re.IGNORECASE), 0.9),
-        (re.compile(r'Enter text from the image', re.IGNORECASE), 0.9),
+        (re.compile(r"captcha\.jpg", re.IGNORECASE), 0.5),
+        (re.compile(r"Image Captcha demo", re.IGNORECASE), 0.9),
+        (re.compile(r"Enter text from the image", re.IGNORECASE), 0.9),
     ],
     "rotate": [
         (re.compile(r"rotatecaptcha|rotate.*captcha|captcha.*rotat", re.IGNORECASE), 0.8),
@@ -124,11 +124,14 @@ _RULES: dict[str, list[tuple[re.Pattern[str], float]]] = {
     ],
     "text": [
         # Strong: solvecaptcha.com text-captcha discriminating signatures
-        (re.compile(r'Text captcha demo', re.IGNORECASE), 1.5),    # page heading (unique to text page)
-        (re.compile(r'/demo/text-captcha', re.IGNORECASE), 1.0),   # URL in page source/meta
-        (re.compile(r'<title[^>]*>.*text.captcha.*</title>', re.IGNORECASE), 0.9),
+        (
+            re.compile(r"Text captcha demo", re.IGNORECASE),
+            1.5,
+        ),  # page heading (unique to text page)
+        (re.compile(r"/demo/text-captcha", re.IGNORECASE), 1.0),  # URL in page source/meta
+        (re.compile(r"<title[^>]*>.*text.captcha.*</title>", re.IGNORECASE), 0.9),
         # 2captcha demo text: must have .text-captcha class OR explicit text-question
-        (re.compile(r'2captcha\.com/demo/text', re.IGNORECASE), 1.2),
+        (re.compile(r"2captcha\.com/demo/text", re.IGNORECASE), 1.2),
         (re.compile(r'class=["\'][^"\']*\btext-captcha\b', re.IGNORECASE), 0.8),
         (re.compile(r"(what|which|solve|answer|calculate).*\?", re.IGNORECASE), 0.3),
         # Generic text markers — only strong when paired with other signals

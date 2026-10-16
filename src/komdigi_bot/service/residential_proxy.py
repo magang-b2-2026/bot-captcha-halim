@@ -7,13 +7,13 @@ Enables the VPS Singapore 24/7 worker to route all browser scraping
 and captcha egress traffic through the Mini PC's residential IP
 via the encrypted Tailscale private mesh network.
 """
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import socket
 import struct
-import sys
 from typing import Optional
 
 logger = logging.getLogger("komdigi_bot.residential_proxy")
@@ -71,7 +71,9 @@ class ResidentialSocks5Server:
     ) -> None:
         peer = client_writer.get_extra_info("peername")
         self._active_connections += 1
-        logger.debug("New proxy client connected from %s (Active: %d)", peer, self._active_connections)
+        logger.debug(
+            "New proxy client connected from %s (Active: %d)", peer, self._active_connections
+        )
 
         try:
             # 1. Greeting & Method Negotiation
@@ -107,7 +109,9 @@ class ResidentialSocks5Server:
             ver, cmd, _, atyp = struct.unpack("!BBBB", req_header)
             if ver != SOCKS_VERSION or cmd != CMD_CONNECT:
                 # Only CONNECT supported
-                reply = struct.pack("!BBBBIH", SOCKS_VERSION, REP_CMD_NOT_SUPPORTED, 0, ATYP_IPV4, 0, 0)
+                reply = struct.pack(
+                    "!BBBBIH", SOCKS_VERSION, REP_CMD_NOT_SUPPORTED, 0, ATYP_IPV4, 0, 0
+                )
                 client_writer.write(reply)
                 await client_writer.drain()
                 client_writer.close()
@@ -125,7 +129,9 @@ class ResidentialSocks5Server:
                 addr_bytes = await client_reader.read(16)
                 target_host = socket.inet_ntop(socket.AF_INET6, addr_bytes)
             else:
-                reply = struct.pack("!BBBBIH", SOCKS_VERSION, REP_ATYP_NOT_SUPPORTED, 0, ATYP_IPV4, 0, 0)
+                reply = struct.pack(
+                    "!BBBBIH", SOCKS_VERSION, REP_ATYP_NOT_SUPPORTED, 0, ATYP_IPV4, 0, 0
+                )
                 client_writer.write(reply)
                 await client_writer.drain()
                 client_writer.close()
@@ -134,7 +140,12 @@ class ResidentialSocks5Server:
             port_bytes = await client_reader.read(2)
             target_port = struct.unpack("!H", port_bytes)[0]
 
-            logger.info("Proxy Tunneling %s -> %s:%d", peer[0] if peer else "unknown", target_host, target_port)
+            logger.info(
+                "Proxy Tunneling %s -> %s:%d",
+                peer[0] if peer else "unknown",
+                target_host,
+                target_port,
+            )
 
             # 3. Connect to Target Host
             try:
@@ -143,8 +154,12 @@ class ResidentialSocks5Server:
                     timeout=15.0,
                 )
             except (asyncio.TimeoutError, OSError) as exc:
-                logger.warning("Failed connecting to target %s:%d - %s", target_host, target_port, exc)
-                reply = struct.pack("!BBBBIH", SOCKS_VERSION, REP_HOST_UNREACHABLE, 0, ATYP_IPV4, 0, 0)
+                logger.warning(
+                    "Failed connecting to target %s:%d - %s", target_host, target_port, exc
+                )
+                reply = struct.pack(
+                    "!BBBBIH", SOCKS_VERSION, REP_HOST_UNREACHABLE, 0, ATYP_IPV4, 0, 0
+                )
                 client_writer.write(reply)
                 await client_writer.drain()
                 client_writer.close()

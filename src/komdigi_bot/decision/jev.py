@@ -265,7 +265,9 @@ class JevClient:
         req = JevRequest(
             model=model,
             state=state,
-            questions={name: JevQuestion(type="choice", instructions=instructions, criteria=criteria)},
+            questions={
+                name: JevQuestion(type="choice", instructions=instructions, criteria=criteria)
+            },
         )
         return self.ask(req).choice(name)
 

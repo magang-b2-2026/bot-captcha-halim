@@ -6,6 +6,7 @@ Background worker thread dengan:
 - Screenshot cleanup hourly
 - Structured logging
 """
+
 from __future__ import annotations
 
 import logging
@@ -18,9 +19,9 @@ from komdigi_bot.service.queue import JobQueue
 
 logger = logging.getLogger("komdigi_bot.worker")
 
-EVIDENCE_DIR     = Path("outputs/evidence")
+EVIDENCE_DIR = Path("outputs/evidence")
 MAX_EVIDENCE_AGE = 7 * 86400
-MAX_EVIDENCE_MB  = 500
+MAX_EVIDENCE_MB = 500
 
 # Error string fragments yang menandai network interruption
 _NETWORK_ERRORS = (
@@ -40,12 +41,13 @@ class QuotaTracker:
     def __init__(self, daily_limit: int = 1500) -> None:
         self._limit = daily_limit
         self._count = 0
-        self._day   = self._today()
-        self._lock  = threading.Lock()
+        self._day = self._today()
+        self._lock = threading.Lock()
 
     @staticmethod
     def _today() -> str:
         import datetime
+
         return datetime.date.today().isoformat()
 
     def increment(self) -> None:
@@ -53,13 +55,15 @@ class QuotaTracker:
             today = self._today()
             if today != self._day:
                 self._count = 0
-                self._day   = today
+                self._day = today
             self._count += 1
             remaining = self._limit - self._count
             if remaining <= 200:
                 logger.warning(
                     "AI Studio quota warning: %d/%d used, %d remaining",
-                    self._count, self._limit, remaining,
+                    self._count,
+                    self._limit,
+                    remaining,
                 )
 
     @property
@@ -92,7 +96,11 @@ def cleanup_evidence(max_age: int = MAX_EVIDENCE_AGE, max_mb: int = MAX_EVIDENCE
             total_bytes -= stat.st_size
             deleted += 1
     if deleted:
-        logger.info("Cleanup: deleted %d screenshots (~%d MB remaining)", deleted, total_bytes // (1024 * 1024))
+        logger.info(
+            "Cleanup: deleted %d screenshots (~%d MB remaining)",
+            deleted,
+            total_bytes // (1024 * 1024),
+        )
 
 
 def _is_network_error(text: str) -> bool:
@@ -108,14 +116,14 @@ class Worker:
         poll_interval: float = 1.0,
         orchestrator_kwargs: dict | None = None,
     ) -> None:
-        self._queue    = queue
-        self._poll     = poll_interval
-        self._orch_kw  = orchestrator_kwargs or {}
+        self._queue = queue
+        self._poll = poll_interval
+        self._orch_kw = orchestrator_kwargs or {}
         self._stop_evt = threading.Event()
-        self._thread   = threading.Thread(target=self._loop, daemon=True, name="komdigi-worker")
-        self.quota     = QuotaTracker()
-        self._jobs_done    = 0
-        self._jobs_failed  = 0
+        self._thread = threading.Thread(target=self._loop, daemon=True, name="komdigi-worker")
+        self.quota = QuotaTracker()
+        self._jobs_done = 0
+        self._jobs_failed = 0
         self._last_cleanup = 0.0
 
     def start(self) -> None:
@@ -134,18 +142,17 @@ class Worker:
     @property
     def stats(self) -> dict:
         return {
-            "jobs_done":       self._jobs_done,
-            "jobs_failed":     self._jobs_failed,
-            "quota_used":      self.quota.used,
+            "jobs_done": self._jobs_done,
+            "jobs_failed": self._jobs_failed,
+            "quota_used": self.quota.used,
             "quota_remaining": self.quota.remaining,
-            "worker_alive":    self.is_alive,
+            "worker_alive": self.is_alive,
         }
 
     # ------------------------------------------------------------------
     def _loop(self) -> None:
         logger.info("Worker loop started")
         while not self._stop_evt.is_set():
-
             # Cleanup screenshots setiap jam
             if time.time() - self._last_cleanup > 3600:
                 cleanup_evidence()
@@ -163,11 +170,13 @@ class Worker:
                 run_result = orch.run(job.url)
 
                 result = {
-                    "family":     run_result.family,
-                    "engine":     run_result.engine,
-                    "status":     (run_result.final_status.value
-                                   if hasattr(run_result.final_status, "value")
-                                   else str(run_result.final_status)),
+                    "family": run_result.family,
+                    "engine": run_result.engine,
+                    "status": (
+                        run_result.final_status.value
+                        if hasattr(run_result.final_status, "value")
+                        else str(run_result.final_status)
+                    ),
                     "latency_ms": getattr(run_result, "latency_ms", None),
                 }
 
@@ -180,8 +189,12 @@ class Worker:
                 self._queue.complete(job.id, result)
                 self.quota.increment()
                 self._jobs_done += 1
-                logger.info("Worker: job %s DONE family=%s status=%s",
-                            job.id[:8], result["family"], result["status"])
+                logger.info(
+                    "Worker: job %s DONE family=%s status=%s",
+                    job.id[:8],
+                    result["family"],
+                    result["status"],
+                )
 
             except Exception as exc:
                 err_str = f"{type(exc).__name__}: {exc}"
@@ -196,7 +209,9 @@ class Worker:
         """Re-queue job setelah network error dengan delay."""
         logger.warning(
             "Worker: job %s network error ('%s...') — re-queuing in %ds",
-            job.id[:8], error_msg[:60], wait,
+            job.id[:8],
+            error_msg[:60],
+            wait,
         )
         time.sleep(wait)
         new_job = self._queue.enqueue(job.url)

@@ -1,4 +1,4 @@
-﻿"""
+"""
 komdigi_bot/service/api.py
 FastAPI HTTP server untuk komdigi-bot service.
 
@@ -9,12 +9,12 @@ Endpoints:
   GET  /metrics         â€” statistik worker & queue
   DELETE /job/{id}      â€” cancel pending job
 """
+
 from __future__ import annotations
 
 import logging
 import time
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -26,8 +26,8 @@ from komdigi_bot.service.worker import Worker
 logger = logging.getLogger("komdigi_bot.api")
 
 # â”€â”€ Singleton state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-_queue:  JobQueue | None = None
-_worker: Worker  | None = None
+_queue: JobQueue | None = None
+_worker: Worker | None = None
 _start_time = time.time()
 
 
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     global _queue, _worker
     logger.info("Starting komdigi-bot service...")
 
-    _queue  = JobQueue()
+    _queue = JobQueue()
     _worker = Worker(_queue, poll_interval=1.0)
     _worker.start()
     logger.info("Worker started. Service ready.")
@@ -62,6 +62,7 @@ app = FastAPI(
 # â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class SolveRequest(BaseModel):
     url: HttpUrl
+
 
 class SolveResponse(BaseModel):
     job_id: str
@@ -152,4 +153,3 @@ def root():
         "health": "/health",
         "metrics": "/metrics",
     }
-

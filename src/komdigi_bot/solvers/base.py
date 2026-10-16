@@ -23,9 +23,9 @@ class SolveAttempt:
     family: str
     engine: str
     status: SolveStatus
-    answer: str = ""              # the answer submitted (text, "x,y", "angle", etc.)
-    message: str = ""            # human-readable result message
-    screenshot_path: str = ""    # absolute path to evidence screenshot
+    answer: str = ""  # the answer submitted (text, "x,y", "angle", etc.)
+    message: str = ""  # human-readable result message
+    screenshot_path: str = ""  # absolute path to evidence screenshot
     latency_ms: float = 0.0
     llm_model: str = ""
     extra: dict[str, Any] = field(default_factory=dict)

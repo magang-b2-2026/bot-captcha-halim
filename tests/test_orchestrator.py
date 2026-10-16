@@ -154,7 +154,9 @@ class TestOrchestratorRunWithPage:
         return page
 
     def test_no_captcha_returns_skip(self, tmp_path: Path) -> None:
-        routing = RoutingResult(family="none", engine="none", confidence=0.0, jev_confirmed=False, pre_gated_none=False)
+        routing = RoutingResult(
+            family="none", engine="none", confidence=0.0, jev_confirmed=False, pre_gated_none=False
+        )
         orch = _orchestrator_patched(_skip_attempt(), routing)
 
         page = self._mock_page()
@@ -163,7 +165,13 @@ class TestOrchestratorRunWithPage:
         assert result.family == "none"
 
     def test_solver_pass_on_first_attempt(self, tmp_path: Path) -> None:
-        routing = RoutingResult(family="text", engine="text_reasoning", confidence=0.8, jev_confirmed=False, pre_gated_none=False)
+        routing = RoutingResult(
+            family="text",
+            engine="text_reasoning",
+            confidence=0.8,
+            jev_confirmed=False,
+            pre_gated_none=False,
+        )
         orch = _orchestrator_patched(_pass_attempt(), routing)
 
         page = self._mock_page()
@@ -172,7 +180,13 @@ class TestOrchestratorRunWithPage:
         assert len(result.attempts) == 1
 
     def test_solver_fails_all_retries(self, tmp_path: Path) -> None:
-        routing = RoutingResult(family="image", engine="image_ocr", confidence=0.7, jev_confirmed=False, pre_gated_none=False)
+        routing = RoutingResult(
+            family="image",
+            engine="image_ocr",
+            confidence=0.7,
+            jev_confirmed=False,
+            pre_gated_none=False,
+        )
         orch = _orchestrator_patched([_fail_attempt("image", "image_ocr")] * 5, routing)
         orch._max_retries = 2
 
@@ -182,12 +196,20 @@ class TestOrchestratorRunWithPage:
         assert len(result.attempts) == 2
 
     def test_skip_stops_retry_loop(self, tmp_path: Path) -> None:
-        routing = RoutingResult(family="click", engine="click_coords", confidence=0.6, jev_confirmed=False, pre_gated_none=False)
+        routing = RoutingResult(
+            family="click",
+            engine="click_coords",
+            confidence=0.6,
+            jev_confirmed=False,
+            pre_gated_none=False,
+        )
         orch = _orchestrator_patched(_skip_attempt("click", "click_coords"), routing)
         orch._max_retries = 3
 
         page = self._mock_page()
-        result = orch._run_with_page(page, "https://2captcha.com/demo/clickcaptcha", "abc", tmp_path, 0.0)
+        result = orch._run_with_page(
+            page, "https://2captcha.com/demo/clickcaptcha", "abc", tmp_path, 0.0
+        )
         # SKIP stops after 1 attempt
         assert len(result.attempts) == 1
         assert result.final_status == SolveStatus.FAIL
@@ -201,7 +223,13 @@ class TestOrchestratorRunWithPage:
 class TestOrchestratorRun:
     @patch("komdigi_bot.orchestrator.StealthBrowser")
     def test_run_returns_result(self, mock_browser_cls: MagicMock, tmp_path: Path) -> None:
-        routing = RoutingResult(family="text", engine="text_reasoning", confidence=0.9, jev_confirmed=False, pre_gated_none=False)
+        routing = RoutingResult(
+            family="text",
+            engine="text_reasoning",
+            confidence=0.9,
+            jev_confirmed=False,
+            pre_gated_none=False,
+        )
 
         settings = _mock_settings()
         orch = Orchestrator.__new__(Orchestrator)

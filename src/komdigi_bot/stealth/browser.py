@@ -23,8 +23,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from playwright.sync_api import (
     Browser,
     BrowserContext,
@@ -34,6 +32,8 @@ from playwright.sync_api import (
 
 from komdigi_bot.config import StealthConfig
 from komdigi_bot.stealth.session import SessionManager
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Anti-automation init-script (injected into every page in the context)
@@ -136,7 +136,9 @@ class StealthBrowser:
             self._browser = self._playwright.chromium.launch(**browser_kwargs)
         except Exception as exc:
             if browser_kwargs.get("channel") == "chrome":
-                logger.warning("Google Chrome binary not found, falling back to bundled Chromium: %s", exc)
+                logger.warning(
+                    "Google Chrome binary not found, falling back to bundled Chromium: %s", exc
+                )
                 browser_kwargs.pop("channel", None)
                 self._browser = self._playwright.chromium.launch(**browser_kwargs)
             else:

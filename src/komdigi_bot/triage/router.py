@@ -49,10 +49,10 @@ _ENGINE_CRITERIA: dict[str, str] = {
 class RoutingResult:
     """Final routing decision."""
 
-    family: str           # detected captcha family
-    engine: str           # engine key (matches _ENGINE_CRITERIA keys)
-    confidence: float     # detector confidence
-    jev_confirmed: bool   # True if Jev confirmed the routing
+    family: str  # detected captcha family
+    engine: str  # engine key (matches _ENGINE_CRITERIA keys)
+    confidence: float  # detector confidence
+    jev_confirmed: bool  # True if Jev confirmed the routing
     pre_gated_none: bool  # True if Jev noul short-circuited (no captcha)
 
 
@@ -68,7 +68,7 @@ class CaptchaRouter:
 
     # Map detector family → default engine (used when Jev is unavailable)
     _FAMILY_ENGINE_MAP: ClassVar[dict[str, str]] = {
-        "turnstile": "api_fallback",     # requires token injection
+        "turnstile": "api_fallback",  # requires token injection
         "recaptcha": "checkbox_grid",
         "hcaptcha": "checkbox_grid",
         "arkose": "api_fallback",
@@ -228,5 +228,7 @@ class CaptchaRouter:
             logger.info("Jev engine choice: %s (prob=%.2f)", engine, answer.probability or 0.0)
             return engine
         except (JevAuthError, JevServerError, JevResponseError) as exc:
-            logger.warning("Jev choice failed (falling back to default %s): %s", default_engine, exc)
+            logger.warning(
+                "Jev choice failed (falling back to default %s): %s", default_engine, exc
+            )
             return default_engine

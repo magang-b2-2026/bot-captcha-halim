@@ -58,13 +58,15 @@ def run_e2e(families: list[str] | None = None, headless: bool = True) -> int:
             run = orch.run(url)
         except Exception as exc:  # noqa: BLE001
             logger.error("E2E[%s]: unhandled error: %s", family, exc)
-            results.append({
-                "family": family,
-                "url": url,
-                "status": "error",
-                "error": str(exc),
-                "latency_ms": round((time.monotonic() - t0) * 1000),
-            })
+            results.append(
+                {
+                    "family": family,
+                    "url": url,
+                    "status": "error",
+                    "error": str(exc),
+                    "latency_ms": round((time.monotonic() - t0) * 1000),
+                }
+            )
             any_fail = True
             continue
 
@@ -94,21 +96,25 @@ def run_e2e(families: list[str] | None = None, headless: bool = True) -> int:
     logger.info("E2E results written to %s", _RESULTS_PATH)
 
     # Print summary
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print("  E2E RESULTS")
     print(f"  {'Family':<14} {'Status':>8} {'ms':>8} {'Attempts':>9}")
-    print(f"  {'-'*50}")
+    print(f"  {'-' * 50}")
     for r in results:
         icon = "✅" if r.get("passed") else ("⏭" if r["status"] == "skip" else "❌")
-        print(f"  {r['family']:<14} {icon} {r['status']:>6} {r.get('latency_ms',0):>8}  {r.get('attempts',0):>8}")
-    print(f"{'='*55}\n")
+        print(
+            f"  {r['family']:<14} {icon} {r['status']:>6} {r.get('latency_ms', 0):>8}  {r.get('attempts', 0):>8}"
+        )
+    print(f"{'=' * 55}\n")
 
     return 1 if any_fail else 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="KOMDIGI E2E captcha solver runner")
-    parser.add_argument("--families", default="", help="Comma-separated families to test (default all)")
+    parser.add_argument(
+        "--families", default="", help="Comma-separated families to test (default all)"
+    )
     parser.add_argument("--no-headless", action="store_true", help="Show browser window")
     args = parser.parse_args()
 

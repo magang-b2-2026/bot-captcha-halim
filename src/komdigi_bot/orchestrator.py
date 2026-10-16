@@ -145,6 +145,7 @@ class Orchestrator:
         # Override headless if requested
         if headless is not None:
             import copy
+
             cfg = copy.copy(self._settings.stealth)
             cfg.headless = headless
             self._stealth_cfg = cfg
@@ -252,7 +253,10 @@ class Orchestrator:
         routing: RoutingResult = self._router.route(html, page_url=url)
         logger.info(
             "Orchestrator[%s]: triage family=%s engine=%s confidence=%.2f",
-            run_id, routing.family, routing.engine, routing.confidence,
+            run_id,
+            routing.family,
+            routing.engine,
+            routing.confidence,
         )
 
         result = RunResult(
@@ -274,7 +278,13 @@ class Orchestrator:
         # In-house retry loop
         if solver:
             for attempt_n in range(1, self._max_retries + 1):
-                logger.info("Orchestrator[%s]: attempt %d/%d engine=%s", run_id, attempt_n, self._max_retries, routing.engine)
+                logger.info(
+                    "Orchestrator[%s]: attempt %d/%d engine=%s",
+                    run_id,
+                    attempt_n,
+                    self._max_retries,
+                    routing.engine,
+                )
                 attempt = solver.solve(page, evidence_dir)
                 result.attempts.append(attempt)
 
@@ -307,24 +317,25 @@ class Orchestrator:
 
         # Chrome CDP fallback — Turnstile/GeeTest/Arkose tanpa 2captcha key
         # Chrome asli fingerprint → auto-pass pada kebanyakan skenario
-        if (
-            result.final_status != SolveStatus.PASS
-            and routing.family in {"turnstile", "geetest", "arkose"}
-        ):
+        if result.final_status != SolveStatus.PASS and routing.family in {
+            "turnstile",
+            "geetest",
+            "arkose",
+        }:
             try:
                 from komdigi_bot.service.chrome_cdp_solver import ChromeCDPSolver
+
                 logger.info(
                     "Orchestrator[%s]: Chrome CDP fallback (family=%s)",
-                    run_id, routing.family,
+                    run_id,
+                    routing.family,
                 )
                 cdp_attempt = ChromeCDPSolver(url=url).solve(page, evidence_dir)
                 result.attempts.append(cdp_attempt)
                 if cdp_attempt.passed:
                     result.final_status = SolveStatus.PASS
             except Exception as cdp_exc:
-                logger.warning(
-                    "Orchestrator[%s]: Chrome CDP failed: %s", run_id, cdp_exc
-                )
+                logger.warning("Orchestrator[%s]: Chrome CDP failed: %s", run_id, cdp_exc)
 
         return result
 

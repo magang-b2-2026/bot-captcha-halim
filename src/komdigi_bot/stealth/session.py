@@ -113,9 +113,7 @@ class SessionManager:
         ua = self.USER_AGENTS[self._current_index % len(self.USER_AGENTS)]
         profile_id = f"profile-{self._current_index % len(self.PROFILES)}"
         self._current_index += 1
-        self._session_data["rotation_count"] = (
-            self._session_data.get("rotation_count", 0) + 1
-        )
+        self._session_data["rotation_count"] = self._session_data.get("rotation_count", 0) + 1
         self._session_data["last_rotation"] = time.time()
         self._session_data["current_profile"] = {
             "index": self._current_index,

@@ -9,6 +9,7 @@ Usage (internal):
 Output: JSON ke stdout
   {"passed": true, "screenshot": "path/to/shot.png", "family": "turnstile"}
 """
+
 from __future__ import annotations
 
 import json
@@ -26,10 +27,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("cdp_runner")
 
-CHROME_EXE   = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+CHROME_EXE = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 TEMP_PROFILE = os.path.join(os.environ.get("TEMP", "C:\\Temp"), "KomdigiBotCDP")
-CDP_PORT     = 9224
-PASS_MARKER  = "Captcha is passed successfully"
+CDP_PORT = 9224
+PASS_MARKER = "Captcha is passed successfully"
 
 
 def launch_chrome() -> subprocess.Popen:
@@ -55,9 +56,7 @@ def wait_cdp(timeout: int = 30) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            urllib.request.urlopen(
-                f"http://127.0.0.1:{CDP_PORT}/json/version", timeout=2
-            )
+            urllib.request.urlopen(f"http://127.0.0.1:{CDP_PORT}/json/version", timeout=2)
             logger.info("Chrome CDP ready")
             return True
         except Exception:
@@ -72,7 +71,7 @@ def run_cdp(url: str, evidence_dir: str) -> dict:
     os.makedirs(evidence_dir, exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{CDP_PORT}")
-        ctx  = browser.contexts[0] if browser.contexts else browser.new_context()
+        ctx = browser.contexts[0] if browser.contexts else browser.new_context()
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
 
         logger.info("Navigating to %s", url)
@@ -94,8 +93,10 @@ def run_cdp(url: str, evidence_dir: str) -> dict:
 
         if not passed:
             for sel in [
-                "button[type='submit']", "#ts_submit",
-                "button:has-text('Check')", "button:has-text('Submit')",
+                "button[type='submit']",
+                "#ts_submit",
+                "button:has-text('Check')",
+                "button:has-text('Submit')",
                 "button:has-text('Verify')",
             ]:
                 try:
@@ -117,7 +118,7 @@ def main() -> None:
         print(json.dumps({"error": "Usage: chrome_cdp_runner.py <url> <evidence_dir>"}))
         sys.exit(1)
 
-    url          = sys.argv[1]
+    url = sys.argv[1]
     evidence_dir = sys.argv[2]
 
     chrome = None

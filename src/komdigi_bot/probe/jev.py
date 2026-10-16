@@ -42,10 +42,7 @@ def run() -> int:
     settings = get_settings()
 
     if not settings.typesafe_api_key:
-        logger.error(
-            "TYPESAFE_API_KEY is not set in .env — "
-            "obtain one from console.typesafe.ai"
-        )
+        logger.error("TYPESAFE_API_KEY is not set in .env — obtain one from console.typesafe.ai")
         _write_error("TYPESAFE_API_KEY not set")
         return 1
 

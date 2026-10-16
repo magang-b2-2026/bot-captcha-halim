@@ -161,8 +161,13 @@ class TextReasoningSolver(BaseSolver):
                 els = page.locator(sel).all()
                 for el in els:
                     text = el.inner_text().strip()
-                    if text and ("?" in text or any(w in text.lower() for w in
-                                                     ["what", "which", "solve", "calculate", "answer", "day"])):
+                    if text and (
+                        "?" in text
+                        or any(
+                            w in text.lower()
+                            for w in ["what", "which", "solve", "calculate", "answer", "day"]
+                        )
+                    ):
                         return text
             except Exception:
                 continue

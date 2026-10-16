@@ -163,14 +163,15 @@ class LLMClient:
         primary_url = f"{self._base_url}/chat/completions"
 
         # Determine whether this is vision or text by checking payload message contents
-        is_vision = any(
-            isinstance(m.get("content"), list)
-            for m in payload.get("messages", [])
-        )
+        is_vision = any(isinstance(m.get("content"), list) for m in payload.get("messages", []))
 
         # Build provider list: (url, headers, model_to_use)
         providers: list[tuple[str, dict[str, str], str]] = [
-            (primary_url, self._headers, payload.get("model", self._vision_model if is_vision else self._reasoning_model))
+            (
+                primary_url,
+                self._headers,
+                payload.get("model", self._vision_model if is_vision else self._reasoning_model),
+            )
         ]
         for fb in self._fallbacks:
             fb_url = fb[0]
@@ -178,11 +179,13 @@ class LLMClient:
             fb_vis = fb[2] if len(fb) > 2 else self._vision_model
             fb_rea = fb[3] if len(fb) > 3 else self._reasoning_model
             chosen_model = fb_vis if is_vision else fb_rea
-            providers.append((
-                f"{fb_url.rstrip('/')}/chat/completions",
-                {"Authorization": f"Bearer {fb_key}", "Content-Type": "application/json"},
-                chosen_model,
-            ))
+            providers.append(
+                (
+                    f"{fb_url.rstrip('/')}/chat/completions",
+                    {"Authorization": f"Bearer {fb_key}", "Content-Type": "application/json"},
+                    chosen_model,
+                )
+            )
 
         last_error: Exception | None = None
         for attempt_idx, (url, headers, model_name) in enumerate(providers):
@@ -195,8 +198,10 @@ class LLMClient:
                     content=json.dumps(req_payload),
                     timeout=self._timeout,
                 )
-            except httpx.TimeoutException as exc:
-                last_error = LLMAPIError(f"LLM request timed out after {self._timeout}s (provider #{attempt_idx})")
+            except httpx.TimeoutException:
+                last_error = LLMAPIError(
+                    f"LLM request timed out after {self._timeout}s (provider #{attempt_idx})"
+                )
                 logger.warning("LLM provider #%d timeout, trying fallback…", attempt_idx)
                 continue
             except httpx.RequestError as exc:
@@ -205,8 +210,12 @@ class LLMClient:
                 continue
 
             if not resp.is_success:
-                last_error = LLMAPIError(f"LLM API {resp.status_code} (provider #{attempt_idx}): {resp.text[:300]}")
-                logger.warning("LLM provider #%d returned %s, trying fallback…", attempt_idx, resp.status_code)
+                last_error = LLMAPIError(
+                    f"LLM API {resp.status_code} (provider #{attempt_idx}): {resp.text[:300]}"
+                )
+                logger.warning(
+                    "LLM provider #%d returned %s, trying fallback…", attempt_idx, resp.status_code
+                )
                 continue
 
             try:

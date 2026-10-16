@@ -7,6 +7,7 @@ melalui jaringan privat terenkripsi Tailscale / WireGuard mesh.
 Usage:
     uv run python start_residential_proxy.py [--host 0.0.0.0] [--port 1080]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -21,8 +22,6 @@ _SRC_DIR = Path(__file__).resolve().parent / "src"
 if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
-from komdigi_bot.service.residential_proxy import ResidentialSocks5Server
-
 
 def setup_logging(log_dir: Path = Path("outputs/logs")) -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -35,19 +34,21 @@ def setup_logging(log_dir: Path = Path("outputs/logs")) -> None:
     fh = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
     )
-    fh.setFormatter(logging.Formatter(
-        "%(asctime)s %(levelname)-8s %(name)s: %(message)s",
-        datefmt="%Y-%m-%dT%H:%M:%S"
-    ))
+    fh.setFormatter(
+        logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(name)s: %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
+        )
+    )
     root.addHandler(fh)
 
     # Stdout handler (only if console is attached)
     if sys.stdout is not None:
         sh = logging.StreamHandler(sys.stdout)
-        sh.setFormatter(logging.Formatter(
-            "%(asctime)s %(levelname)-8s %(name)s: %(message)s",
-            datefmt="%H:%M:%S"
-        ))
+        sh.setFormatter(
+            logging.Formatter(
+                "%(asctime)s %(levelname)-8s %(name)s: %(message)s", datefmt="%H:%M:%S"
+            )
+        )
         root.addHandler(sh)
 
 

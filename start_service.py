@@ -5,6 +5,7 @@ Menginisialisasi structured logging ke file + stdout sebelum server mulai.
 Usage:
     uv run python start_service.py [--port 8080] [--host 0.0.0.0]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,18 +27,18 @@ def setup_logging(log_dir: Path = Path("outputs/logs")) -> None:
     fh = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
     )
-    fh.setFormatter(logging.Formatter(
-        "%(asctime)s %(levelname)-8s %(name)s: %(message)s",
-        datefmt="%Y-%m-%dT%H:%M:%S"
-    ))
+    fh.setFormatter(
+        logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(name)s: %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
+        )
+    )
     root.addHandler(fh)
 
     # Stdout handler
     sh = logging.StreamHandler(sys.stdout)
-    sh.setFormatter(logging.Formatter(
-        "%(asctime)s %(levelname)-8s %(name)s: %(message)s",
-        datefmt="%H:%M:%S"
-    ))
+    sh.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)-8s %(name)s: %(message)s", datefmt="%H:%M:%S")
+    )
     root.addHandler(sh)
 
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)  # kurangi noise
@@ -60,12 +61,13 @@ def main() -> None:
     logger.info("=" * 60)
 
     import uvicorn
+
     uvicorn.run(
         "komdigi_bot.service.api:app",
         host=args.host,
         port=args.port,
         reload=args.reload,
-        log_level="warning",   # uvicorn logs — pakai logger kita sendiri
+        log_level="warning",  # uvicorn logs — pakai logger kita sendiri
         access_log=False,
     )
 

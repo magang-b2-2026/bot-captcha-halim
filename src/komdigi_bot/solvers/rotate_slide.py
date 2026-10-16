@@ -199,6 +199,7 @@ class RotateSlideSolver(BaseSolver):
     def _drag(self, page: Page, box: FloatRect, delta_x: float, delta_y: float) -> None:
         """Human-like drag with ease-in-out and jitter."""
         import random
+
         rng = random.Random()
         sx = box["x"] + box["width"] / 2
         sy = box["y"] + box["height"] / 2

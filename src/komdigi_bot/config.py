@@ -87,9 +87,9 @@ class Settings(BaseSettings):
     llm_fallback_api_key: str = ""
     llm_fallback_model_vision: str = "anthropic/claude-fable-5"
     llm_fallback_model_reasoning: str = "deepseek/deepseek-v4.1-flash"
-    twocaptcha_api_key: str = ""        # 2captcha.com API key (for api_fallback engine)
-    solver_api_key_2captcha: str = ""   # legacy alias kept for backward compat
-    proxy: str = ""                     # SOCKS5/HTTP egress proxy (e.g. socks5://user:pass@host:port)
+    twocaptcha_api_key: str = ""  # 2captcha.com API key (for api_fallback engine)
+    solver_api_key_2captcha: str = ""  # legacy alias kept for backward compat
+    proxy: str = ""  # SOCKS5/HTTP egress proxy (e.g. socks5://user:pass@host:port)
 
     stealth: StealthConfig = Field(default_factory=StealthConfig)
     jev: JevConfig = Field(default_factory=JevConfig)

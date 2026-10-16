@@ -44,7 +44,7 @@ _SUBMIT_SELECTORS = [
 _VISION_SYSTEM = (
     "You are a CAPTCHA solver that finds specific objects in images. "
     "Return ONLY a JSON object with 'x' and 'y' keys (integer pixel coordinates) "
-    "indicating where to click. Example: {\"x\": 142, \"y\": 87}"
+    'indicating where to click. Example: {"x": 142, "y": 87}'
 )
 
 
@@ -102,7 +102,7 @@ class ClickCoordsSolver(BaseSolver):
         prompt = (
             f"In this CAPTCHA image, find and return the pixel coordinates (x, y) "
             f"of: {instruction or 'the target object'}. "
-            "Return ONLY a JSON object like {\"x\": 100, \"y\": 200}."
+            'Return ONLY a JSON object like {"x": 100, "y": 200}.'
         )
 
         try:

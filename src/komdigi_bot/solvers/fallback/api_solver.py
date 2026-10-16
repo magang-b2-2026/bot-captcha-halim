@@ -117,7 +117,9 @@ class APIFallbackSolver(BaseSolver):
             engine=self.ENGINE_KEY,
             status=SolveStatus.PASS if passed else SolveStatus.FAIL,
             answer=token[:40] + "…" if len(token) > 40 else token,
-            message=CAPTCHA_PASS_MARKER if passed else "Token injected but success marker not found",
+            message=CAPTCHA_PASS_MARKER
+            if passed
+            else "Token injected but success marker not found",
             screenshot_path=screenshot,
             latency_ms=(time.monotonic() - t0) * 1000,
         )
@@ -176,7 +178,7 @@ class APIFallbackSolver(BaseSolver):
             # reCAPTCHA v2 callback
             f"if(window.___grecaptcha_cfg){{document.getElementById('g-recaptcha-response').value='{token}';}}",
             # Generic hidden input
-            f"(function(){{var i=document.querySelector('[name=\"cf-turnstile-response\"],[name=\"g-recaptcha-response\"],[name=\"h-captcha-response\"]');if(i){{i.value='{token}';}}}})();",
+            f'(function(){{var i=document.querySelector(\'[name="cf-turnstile-response"],[name="g-recaptcha-response"],[name="h-captcha-response"]\');if(i){{i.value=\'{token}\';}}}})();',
         ]
 
         for js in js_injectors:

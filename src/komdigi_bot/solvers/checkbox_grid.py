@@ -175,7 +175,9 @@ class CheckboxGridSolver(BaseSolver):
             url = frame.url or ""
             if "bframe" in url or "challenge" in url or "hcaptcha" in url:
                 try:
-                    frame_loc = page.frame_locator(f"iframe[src*='{url.split('?')[0].split('/')[-1]}']")
+                    frame_loc = page.frame_locator(
+                        f"iframe[src*='{url.split('?')[0].split('/')[-1]}']"
+                    )
                     _ = frame_loc.locator("body").screenshot(path=str(img_path))
                     return img_path
                 except Exception:

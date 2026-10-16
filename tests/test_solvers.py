@@ -43,9 +43,7 @@ def _mock_llm_response(text: str) -> MagicMock:
     resp = MagicMock()
     resp.is_success = True
     resp.status_code = 200
-    resp.json.return_value = {
-        "choices": [{"message": {"content": text}}]
-    }
+    resp.json.return_value = {"choices": [{"message": {"content": text}}]}
     return resp
 
 
@@ -114,6 +112,7 @@ class TestLLMClientAskText:
     @patch("httpx.post")
     def test_ask_text_timeout_raises(self, mock_post: MagicMock) -> None:
         import httpx as httpx_mod
+
         mock_post.side_effect = httpx_mod.TimeoutException("timeout")
         with pytest.raises(LLMAPIError, match="timed out"):
             _llm().ask_text("test")
@@ -151,6 +150,7 @@ class TestParseCoords:
 
     def test_unparseable_raises(self) -> None:
         from komdigi_bot.solvers.llm import LLMParseError
+
         with pytest.raises(LLMParseError):
             _parse_coords("no numbers here at all")
 
@@ -170,6 +170,7 @@ class TestParseAngle:
 
     def test_unparseable_raises(self) -> None:
         from komdigi_bot.solvers.llm import LLMParseError
+
         with pytest.raises(LLMParseError):
             _parse_angle("unknown direction")
 

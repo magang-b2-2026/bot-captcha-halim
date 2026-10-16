@@ -7,6 +7,7 @@ terisolasi dari asyncio event loop milik worker thread. Playwright sync API
 tidak bisa dipanggil dari non-main thread — subprocess sepenuhnya menghindari
 masalah ini karena memiliki event loop sendiri.
 """
+
 from __future__ import annotations
 
 import json
@@ -33,6 +34,7 @@ class ChromeCDPSolver(BaseSolver):
     Playwright sync_playwright() dapat membuat asyncio event loop sendiri
     tanpa konflik dengan event loop worker thread.
     """
+
     ENGINE_KEY = "chrome_cdp"
 
     def __init__(self, url: str) -> None:
@@ -40,19 +42,22 @@ class ChromeCDPSolver(BaseSolver):
 
     def solve(self, page, evidence_dir: Path) -> SolveAttempt:
         import time as _time
+
         t0 = _time.monotonic()
         family = "turnstile"
 
         try:
             result = self._run_subprocess(str(evidence_dir))
-            passed  = result.get("passed", False)
+            passed = result.get("passed", False)
             err_msg = result.get("error", "")
 
             return SolveAttempt(
                 family=family,
                 engine=self.ENGINE_KEY,
                 status=SolveStatus.PASS if passed else SolveStatus.FAIL,
-                message=CAPTCHA_PASS_MARKER if passed else f"Chrome CDP: {err_msg or 'success marker not found'}",
+                message=CAPTCHA_PASS_MARKER
+                if passed
+                else f"Chrome CDP: {err_msg or 'success marker not found'}",
                 screenshot_path=result.get("screenshot", ""),
                 latency_ms=(_time.monotonic() - t0) * 1000,
             )
@@ -69,7 +74,7 @@ class ChromeCDPSolver(BaseSolver):
     def _run_subprocess(self, evidence_dir: str) -> dict:
         """Spawn chrome_cdp_runner.py sebagai proses terpisah."""
         python_exe = sys.executable  # uv venv python
-        runner     = str(_RUNNER.resolve())
+        runner = str(_RUNNER.resolve())
 
         logger.info("ChromeCDP: spawning subprocess runner (url=%s)", self._url)
         proc = subprocess.run(
@@ -90,6 +95,7 @@ class ChromeCDPSolver(BaseSolver):
         result = json.loads(proc.stdout.strip())
         logger.info(
             "ChromeCDP: subprocess done — passed=%s exit=%d",
-            result.get("passed"), proc.returncode,
+            result.get("passed"),
+            proc.returncode,
         )
         return result

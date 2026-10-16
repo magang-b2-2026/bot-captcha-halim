@@ -343,7 +343,7 @@ uv run pytest tests/test_qa_four_challenges.py -o pythonpath=src -v
 uv run python -m komdigi_bot.benchmark --site solvecaptcha --runs 1
 
 # Uji langsung Chrome CDP fisik
-uv run python real_browser_test.py
+uv run python chrome_cdp_runner.py https://solvecaptcha.com/demo/cloudflare-turnstile outputs/evidence
 ```
 
 ---

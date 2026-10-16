@@ -6,10 +6,10 @@ QA verification suite for the 4 requested target challenge types:
 3. http://democaptcha.com/demo-form-eng/math-image.html
 4. https://2captcha.com/demo/normal
 """
+
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
 from playwright.sync_api import sync_playwright
 
 from komdigi_bot.solvers.base import SolveStatus
@@ -122,7 +122,9 @@ def test_routing_engine_mapping():
     assert r2.family == "text"
     assert r2.engine == "text_reasoning"
 
-    r3 = router.route(FIXTURE_DEMOCAPTCHA_MATH, "http://democaptcha.com/demo-form-eng/math-image.html")
+    r3 = router.route(
+        FIXTURE_DEMOCAPTCHA_MATH, "http://democaptcha.com/demo-form-eng/math-image.html"
+    )
     assert r3.family == "image"
     assert r3.engine == "image_ocr"
 

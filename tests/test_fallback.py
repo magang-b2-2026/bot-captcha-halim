@@ -26,7 +26,7 @@ def _client(key: str = "test-key") -> TwoCaptchaClient:
 
 def _resp(body: dict[str, Any], status: int = 200) -> MagicMock:
     r = MagicMock()
-    r.is_success = (200 <= status < 300)
+    r.is_success = 200 <= status < 300
     r.status_code = status
     r.json.return_value = body
     r.text = json.dumps(body)
@@ -89,6 +89,7 @@ class TestTwoCaptchaSubmitAndPoll:
     @patch("httpx.post")
     def test_timeout_raises(self, mock_post: MagicMock) -> None:
         import itertools
+
         # Provide create OK then unlimited processing responses
         mock_post.side_effect = itertools.chain(
             [_resp(_create_ok(1))],
@@ -99,7 +100,9 @@ class TestTwoCaptchaSubmitAndPoll:
 
     @patch("httpx.post")
     def test_error_code_raises(self, mock_post: MagicMock) -> None:
-        mock_post.return_value = _resp({"errorCode": "ERROR_KEY_DOES_NOT_EXIST", "errorDescription": "Bad key"})
+        mock_post.return_value = _resp(
+            {"errorCode": "ERROR_KEY_DOES_NOT_EXIST", "errorDescription": "Bad key"}
+        )
         with pytest.raises(TwoCaptchaError, match="ERROR_KEY_DOES_NOT_EXIST"):
             _client().solve_turnstile("https://example.com", "0xBAD")
 
@@ -122,11 +125,15 @@ class TestTwoCaptchaSubmitAndPoll:
     def test_geetest_returns_solution_dict(self, mock_post: MagicMock) -> None:
         mock_post.side_effect = [
             _resp(_create_ok(6)),
-            _resp(_result_ready({
-                "validate": "abc123",
-                "seccode": "abc123|jordan",
-                "challenge": "ch_xyz",
-            })),
+            _resp(
+                _result_ready(
+                    {
+                        "validate": "abc123",
+                        "seccode": "abc123|jordan",
+                        "challenge": "ch_xyz",
+                    }
+                )
+            ),
         ]
         result = _client().solve_geetest("https://example.com", "gt_abc", "ch_xyz")
         assert result["geetest_validate"] == "abc123"
@@ -155,7 +162,11 @@ class TestAPIFallbackSolver:
         client.solve_turnstile.return_value = "cf-tok"
         client.solve_funcaptcha.return_value = "arkose-tok"
         client.solve_recaptcha_v2.return_value = "recaptcha-tok"
-        client.solve_geetest.return_value = {"geetest_validate": "val", "geetest_seccode": "sec", "geetest_challenge": "ch"}
+        client.solve_geetest.return_value = {
+            "geetest_validate": "val",
+            "geetest_seccode": "sec",
+            "geetest_challenge": "ch",
+        }
 
         return APIFallbackSolver(
             client=client,

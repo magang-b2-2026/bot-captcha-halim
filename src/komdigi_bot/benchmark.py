@@ -57,7 +57,6 @@ SOLVECAPTCHA_TARGETS: list[dict[str, str]] = [
 ]
 
 
-
 # ---------------------------------------------------------------------------
 # Stats
 # ---------------------------------------------------------------------------
@@ -127,8 +126,7 @@ def run_benchmark(
 
     orch = Orchestrator(max_retries=2, headless=headless)
     stats: dict[str, FamilyStats] = {
-        t["family"]: FamilyStats(family=t["family"], url=t["url"])
-        for t in all_targets
+        t["family"]: FamilyStats(family=t["family"], url=t["url"]) for t in all_targets
     }
 
     total_runs = len(all_targets) * runs_per_target
@@ -163,8 +161,7 @@ def run_benchmark(
         "runs_per_target": runs_per_target,
         "results": [s.to_dict() for s in stats.values()],
         "overall_pass_rate": round(
-            sum(s.passed for s in stats.values()) /
-            max(sum(s.total for s in stats.values()), 1),
+            sum(s.passed for s in stats.values()) / max(sum(s.total for s in stats.values()), 1),
             3,
         ),
     }
@@ -172,23 +169,25 @@ def run_benchmark(
 
 
 def print_summary(summary: dict[str, Any]) -> None:
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  BENCHMARK RESULTS  — overall pass rate: {summary['overall_pass_rate']:.1%}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  {'Family':<12} {'Pass':>5} {'Fail':>5} {'Skip':>5} {'Rate':>7} {'Avg ms':>8}")
-    print(f"  {'-'*55}")
+    print(f"  {'-' * 55}")
     for r in summary["results"]:
         print(
             f"  {r['family']:<12} {r['passed']:>5} {r['failed']:>5} {r['skipped']:>5} "
             f"{r['pass_rate']:>7.1%} {r['avg_latency_ms']:>8.0f}"
         )
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="KOMDIGI captcha solver benchmark")
     parser.add_argument("--runs", type=int, default=3, help="Runs per target (default 3)")
-    parser.add_argument("--families", default="", help="Comma-separated families to test (default all)")
+    parser.add_argument(
+        "--families", default="", help="Comma-separated families to test (default all)"
+    )
     parser.add_argument("--no-headless", action="store_true", help="Run with visible browser")
     parser.add_argument(
         "--site",
@@ -205,7 +204,9 @@ def main() -> int:
 
     logger.info(
         "Starting benchmark: site=%s runs=%d families=%s",
-        args.site, args.runs, families or "all",
+        args.site,
+        args.runs,
+        families or "all",
     )
     summary = run_benchmark(
         runs_per_target=args.runs,
@@ -223,4 +224,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

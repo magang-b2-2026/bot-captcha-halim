@@ -5,6 +5,7 @@ Schema:
   jobs(id TEXT PK, url TEXT, status TEXT, created_at REAL,
        started_at REAL, finished_at REAL, result JSON, error TEXT)
 """
+
 from __future__ import annotations
 
 import json
@@ -21,10 +22,10 @@ DB_PATH = Path("outputs/jobs.db")
 
 
 class JobStatus(str, Enum):
-    PENDING  = "pending"
-    RUNNING  = "running"
-    DONE     = "done"
-    FAILED   = "failed"
+    PENDING = "pending"
+    RUNNING = "running"
+    DONE = "done"
+    FAILED = "failed"
 
 
 @dataclass
@@ -105,9 +106,11 @@ class JobQueue:
             )
             con.commit()
             return Job(
-                id=row["id"], url=row["url"],
+                id=row["id"],
+                url=row["url"],
                 status=JobStatus.RUNNING,
-                created_at=row["created_at"], started_at=now,
+                created_at=row["created_at"],
+                started_at=now,
             )
 
     def complete(self, job_id: str, result: dict) -> None:
@@ -132,7 +135,8 @@ class JobQueue:
             if not row:
                 return None
             return Job(
-                id=row["id"], url=row["url"],
+                id=row["id"],
+                url=row["url"],
                 status=JobStatus(row["status"]),
                 created_at=row["created_at"],
                 started_at=row["started_at"],
@@ -143,9 +147,7 @@ class JobQueue:
 
     def stats(self) -> dict[str, int]:
         with self._lock, self._conn() as con:
-            rows = con.execute(
-                "SELECT status, COUNT(*) as n FROM jobs GROUP BY status"
-            ).fetchall()
+            rows = con.execute("SELECT status, COUNT(*) as n FROM jobs GROUP BY status").fetchall()
             return {r["status"]: r["n"] for r in rows}
 
     def cleanup_old(self, max_age_days: int = 7) -> int:

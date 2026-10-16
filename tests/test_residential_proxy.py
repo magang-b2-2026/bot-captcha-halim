@@ -2,6 +2,7 @@
 tests/test_residential_proxy.py
 Tests for the RFC 1928 SOCKS5 residential proxy server.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -52,7 +53,11 @@ async def test_socks5_handshake_and_connect():
 
         # Connect command: CMD_CONNECT to 127.0.0.1:echo_port
         ip_bytes = bytes([127, 0, 0, 1])
-        req = struct.pack("!BBBB", SOCKS_VERSION, CMD_CONNECT, 0, ATYP_IPV4) + ip_bytes + struct.pack("!H", echo_port)
+        req = (
+            struct.pack("!BBBB", SOCKS_VERSION, CMD_CONNECT, 0, ATYP_IPV4)
+            + ip_bytes
+            + struct.pack("!H", echo_port)
+        )
         writer.write(req)
         await writer.drain()
 

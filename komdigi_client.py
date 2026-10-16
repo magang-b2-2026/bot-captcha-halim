@@ -13,6 +13,7 @@ Contoh Penggunaan:
     if result.get("status") == "pass":
         print("Captcha berhasil dipecahkan!", result)
 """
+
 from __future__ import annotations
 
 import logging
@@ -66,7 +67,7 @@ class KomdigiCaptchaClient:
     ) -> dict[str, Any]:
         """
         Kirim target URL dan tunggu hingga captcha selesai dipecahkan (blocking).
-        
+
         Returns dict:
             {"status": "pass" | "fail", "family": str, "engine": str, ...}
         """

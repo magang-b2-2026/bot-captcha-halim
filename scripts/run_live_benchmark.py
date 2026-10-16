@@ -20,7 +20,7 @@ from komdigi_bot.orchestrator import Orchestrator
 TARGETS = [
     ("https://democaptcha.com/demo-form-eng/image.html", "democaptcha_image"),
     ("https://2captcha.com/demo/text", "2captcha_text"),
-    ("http://democaptcha.com/demo-form-eng/math-image.html", "democaptcha_math"),
+    ("https://democaptcha.com/demo-form-eng/math-image.html", "democaptcha_math"),
     ("https://2captcha.com/demo/normal", "2captcha_normal"),
 ]
 

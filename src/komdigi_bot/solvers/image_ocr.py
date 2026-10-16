@@ -28,6 +28,9 @@ from komdigi_bot.solvers.llm import LLMClient
 logger = logging.getLogger(__name__)
 
 _IMAGE_SELECTORS = [
+    "#htest_image",
+    "img#htest_image",
+    "img[src*='veriword' i]",
     "img[alt*='captcha' i]",
     "img[src*='captcha' i]",
     "#captcha",
@@ -40,6 +43,9 @@ _IMAGE_SELECTORS = [
 ]
 
 _INPUT_SELECTORS = [
+    "#vericode",
+    "input#vericode",
+    "input[name='vericode']",
     "input[name*='captcha' i]",
     "input[id*='captcha' i]",
     "input[name*='keystring' i]",
@@ -163,10 +169,11 @@ class ImageOCRSolver(BaseSolver):
             )
 
         # ------------------------------------------------------------------
-        # 4. Submit and check
+        # 4. Fill companion fields (if required by demo form) and submit
         # ------------------------------------------------------------------
+        self._fill_companion_fields(page)
         self._click_submit(page)
-        time.sleep(1.5)
+        time.sleep(2.0)
         final_screenshot = self._take_screenshot(page, evidence_dir, "image-solved.png")
         passed = self._check_success(page)
 
@@ -184,6 +191,19 @@ class ImageOCRSolver(BaseSolver):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _fill_companion_fields(self, page: Page) -> None:
+        """Populate empty companion fields (e.g. required textarea message on democaptcha)."""
+        try:
+            textareas = page.locator("textarea").all()
+            for ta in textareas:
+                if ta.is_visible():
+                    val = ta.input_value() if hasattr(ta, "input_value") else ""
+                    if not val or not str(val).strip():
+                        ta.fill("Automated QA inquiry verification.")
+                        logger.info("ImageOCR: populated empty companion textarea")
+        except Exception as exc:
+            logger.debug("ImageOCR: companion textarea fill skipped: %s", exc)
 
     def _screenshot_captcha_element(self, page: Page, evidence_dir: Path) -> Path | None:
         for sel in _IMAGE_SELECTORS:
@@ -214,7 +234,10 @@ class ImageOCRSolver(BaseSolver):
             try:
                 btn = page.locator(sel).first
                 if btn.is_visible():
-                    btn.click()
+                    try:
+                        btn.click(no_wait_after=True, timeout=5000)
+                    except TypeError:
+                        btn.click(timeout=5000)
                     return
             except Exception:
                 continue

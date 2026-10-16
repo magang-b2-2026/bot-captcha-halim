@@ -1,8 +1,13 @@
 # KOMDIGI Bot — Autonomous Captcha Solver & Computer-Use Engine
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](pyproject.toml)
+> **Author & Project Owner**: **Naufal Halim** ([@naufalhalims](https://github.com/naufalhalims))  
+> **Contact / Inquiry**: `naufalhalim46@gmail.com`  
+> **Organization Repository**: Komdigi Bot Project
+
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-128%2F128%20passing-brightgreen.svg)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
+[![Author](https://img.shields.io/badge/author-Naufal%20Halim-orange.svg)](https://github.com/naufalhalims)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **KOMDIGI Bot** adalah mesin automasi *computer-use* dan pemecah CAPTCHA otonom berbasis arsitektur **Tri-Tier AI & Two-Tier Browser**. Dirancang untuk keandalan produksi 24/7, bot ini menggabungkan klasifikasi cepat berlatensi rendah (System 1) dengan penalaran model visi multi-modal (System 2), serta routing jaringan residensial hibrida untuk melewati deteksi anti-bot modern secara andal.

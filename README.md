@@ -156,8 +156,8 @@ komdigi-bot/
 ### 2. Kloning & Pembuatan Virtual Environment
 ```bash
 # Clone repositori
-git clone https://github.com/<organization>/komdigi-bot.git
-cd komdigi-bot
+git clone https://github.com/magang-b2-2026/bot-captcha-halim.git
+cd bot-captcha-halim
 
 # Buat virtual environment menggunakan uv
 uv venv .venv

@@ -196,7 +196,10 @@ class TextReasoningSolver(BaseSolver):
             try:
                 btn = page.locator(sel).first
                 if btn.is_visible():
-                    btn.click()
+                    try:
+                        btn.click(no_wait_after=True, timeout=5000)
+                    except TypeError:
+                        btn.click(timeout=5000)
                     return
             except Exception:
                 continue

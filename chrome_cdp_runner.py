@@ -15,8 +15,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 
@@ -27,8 +29,37 @@ logging.basicConfig(
 )
 logger = logging.getLogger("cdp_runner")
 
-CHROME_EXE = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-TEMP_PROFILE = os.path.join(os.environ.get("TEMP", "C:\\Temp"), "KomdigiBotCDP")
+
+def _find_chrome_executable() -> str:
+    env_path = os.environ.get("CHROME_PATH") or os.environ.get("CHROME_BIN")
+    if env_path and os.path.exists(env_path):
+        return env_path
+
+    candidates = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        os.path.expanduser(r"~\AppData\Local\Google\Chrome\Application\chrome.exe"),
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+        "/snap/bin/chromium",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+
+    which_chrome = (
+        shutil.which("google-chrome") or shutil.which("chrome") or shutil.which("chromium")
+    )
+    if which_chrome:
+        return which_chrome
+
+    return "chrome"
+
+
+CHROME_EXE = _find_chrome_executable()
+TEMP_PROFILE = os.path.join(tempfile.gettempdir(), "KomdigiBotCDP")
 CDP_PORT = 9224
 PASS_MARKER = "Captcha is passed successfully"
 

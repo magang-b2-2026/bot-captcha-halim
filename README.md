@@ -1,7 +1,7 @@
 # KOMDIGI Bot — Autonomous Captcha Solver & Computer-Use Engine
 
 [![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-127%2F127%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-128%2F128%20passing-brightgreen.svg)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -35,6 +35,37 @@
 
 ## Arsitektur Sistem
 
+```mermaid
+flowchart TD
+    subgraph ClientLayer ["Ekosistem Klien & Aplikasi"]
+        A["Aplikasi Eksternal / Bot Lain"] -->|HTTP POST /solve| B["FastAPI BaaS (Port 8080)"]
+        SDK["komdigi_client.py SDK"] -->|Impor Python 3 Baris| B
+    end
+
+    subgraph VPSNode ["VPS Cloud (Singapore 24/7)"]
+        B --> C["In-Memory Task Queue & Worker"]
+        C --> D["Orchestrator"]
+        D --> E{"TypeSafe Jev Pre-gate"}
+        E -->|No CAPTCHA| EXIT["Stop (Hemat Token)"]
+        E -->|Verified| F["Solver Engine Registry"]
+        F --> G["9router LLM (Port 20128)"]
+        G -.->|Fallback Failover| H["AI Studio / Vikey API"]
+    end
+
+    subgraph HybridEgress ["Kebijakan Egress Jaringan (Dual-Mode)"]
+        F -->|Anti-Bot Lokal Ketat / Komdigi| PROXY["SOCKS5 Proxy (Port 1080)"]
+        F -->|Target Global / Democaptcha AS9123| DIRECT["Direct VPS Clean Egress"]
+    end
+
+    subgraph MiniPC ["Node Residensial (Mini PC Windows)"]
+        PROXY -->|Tailscale P2P Tunnel| DAEMON["KomdigiResidentialProxy Service"]
+        DAEMON --> RES_IP["IP Residensial Indonesia (ISP Asli)"]
+    end
+
+    RES_IP --> TARGET["Situs Target Web"]
+    DIRECT --> TARGET
+```
+
 ```text
 +-----------------------------------------------------------------------------------+
 |                        JARINGAN PRIVAT TERENKRIPSI (TAILSCALE)                    |
@@ -45,8 +76,8 @@
 |  |                                     | ---------> |                          |  |
 |  | - Worker PM2 (FastAPI Port 8080)    |   :1080    | - start_residential_     |  |
 |  | - Task Queue & Orchestrator         |            |   proxy.py (Port 1080)   |  |
-|  | - TypeSafe Jev Pre-Gate (System 1)  |            | - Real Chrome CDP Engine |  |
-|  | - Local 9router LLM (Port 20128)    |            |   (Port 9224)            |  |
+|  | - TypeSafe Jev Pre-Gate (System 1)  |            | - NSSM Windows Service   |  |
+|  | - Local 9router LLM (Port 20128)    |            | - Real Chrome CDP Engine |  |
 |  |   Latensi Intra-VPS: ~1-2ms         |            | - Residential IP Egress  |  |
 |  +-------------------------------------+            +--------------------------+  |
 |                     |                                             |               |
@@ -70,6 +101,10 @@ komdigi-bot/
 │   ├── ecosystem.config.js  # Konfigurasi proses PM2 untuk VPS
 │   ├── setup_vps.sh         # Skrip automasi setup lingkungan VPS
 │   └── verify_egress.py     # Diagnostik verifikasi IP egress proxy
+├── scripts/                 # Utilitas operasional & benchmark live
+│   ├── install_residential_service.ps1   # Installer otomatis Windows Service via NSSM
+│   ├── uninstall_residential_service.ps1 # Uninstaller Windows Service
+│   └── run_live_benchmark.py             # Runner benchmark 4 skenario tantangan nyata
 ├── src/komdigi_bot/         # Modul sumber utama
 │   ├── decision/            # Integrasi TypeSafe AI Jev (System 1 pre-gating)
 │   ├── probe/               # Probe validasi dan health check Jev
@@ -93,13 +128,15 @@ komdigi-bot/
 │   ├── triage/              # Detektor keluarga CAPTCHA berbasis tanda tangan DOM
 │   ├── config.py            # Validasi pengaturan Pydantic Settings
 │   └── orchestrator.py      # Orkestrator alur kerja (Triage -> Jev -> Solve)
-├── tests/                   # Suite pengujian otomatis (127 unit & integration tests)
+├── tests/                   # Suite pengujian otomatis (128 unit & integration tests)
 ├── .env.example             # Template variabel lingkungan bebas rahasia
-├── guide-komdigibot.md      # Panduan teknis komprehensif v1.2
+├── guide-komdigibot.md      # Panduan teknis komprehensif & handbook produksi
+├── install_service.bat      # Launcher 1-klik pendaftaran Windows Service (NSSM)
+├── uninstall_service.bat    # Launcher 1-klik pencabutan Windows Service
 ├── komdigi_client.py        # Client SDK siap impor untuk bot eksternal
 ├── pyproject.toml           # Spesifikasi dependensi dan metadata proyek
-├── start_residential_proxy.py # Runner SOCKS5 residential proxy
-└── start_service.py         # Runner service HTTP API
+├── start_residential_proxy.py # Runner SOCKS5 residential proxy standalone
+└── start_service.py         # Runner service HTTP API standalone
 ```
 
 ---
@@ -247,20 +284,31 @@ Repositori dilengkapi dengan suite pengujian otomatis menyeluruh mencakup seluru
 
 ```bash
 # Jalankan seluruh unit test
-PYTHONPATH=src uv run pytest tests/
+uv run pytest -o pythonpath=src tests/
 ```
 
-**Hasil Evaluasi**:
-* **Total Tests**: **127 passed (100% green)**
+**Hasil Evaluasi Unit Test**:
+* **Total Tests**: **128 passed (100% green)**
 * **Cakupan Pengujian**:
   * `test_config.py`: Validasi schema pengaturan Pydantic & hierarki override.
   * `test_jev.py`: Tipe model respon TypeSafe System 1 (`choice`, `score`, `noul`).
   * `test_orchestrator.py`: Alur kerja triage, pemilihan solver, dan retry ladder.
-  * `test_solvers.py`: Pengujian kelima in-house solver engines.
+  * `test_solvers.py`: Pengujian seluruh in-house solver engines (termasuk auto-fill textarea & non-blocking submit).
   * `test_stealth.py`: Rotasi sesi, user-agent, dan penanganan proxy.
   * `test_triage.py`: Deteksi tanda tangan DOM CAPTCHA multi-platform.
   * `test_residential_proxy.py`: Handshake dan streaming relay SOCKS5 RFC 1928.
   * `test_qa_four_challenges.py`: Verifikasi end-to-end tantangan nyata.
+
+### Scorecard Benchmark Live (4 Skenario Nyata)
+
+Evaluasi langsung dijalankan via `uv run python scripts/run_live_benchmark.py`:
+
+| # | Skenario Uji | Target URL | Engine Solver | Status | Latensi Rata-Rata | Catatan Teknis |
+|---|---|---|---|---|---|---|
+| 1 | `2captcha_text` | `https://2captcha.com/demo/text` | `text_reasoning` | **PASS** | 33.20s | Penalaran pertanyaan hari/waktu |
+| 2 | `2captcha_normal` | `https://2captcha.com/demo/normal` | `image_ocr` | **PASS** | 32.72s | Transkripsi huruf terdistorsi |
+| 3 | `democaptcha_image` | `https://democaptcha.com/demo-form-eng/image.html` | `image_ocr` | **PASS** | 35.10s | Auto-fill companion message field |
+| 4 | `democaptcha_math` | `https://democaptcha.com/demo-form-eng/math-image.html` | `image_ocr` (math) | **PASS** | 36.80s | Evaluasi aritmatika otomatis |
 
 ---
 

@@ -1,8 +1,8 @@
-# komdigi-bot v1.2 — Guide Lengkap & Spesifikasi Arsitektur
+# komdigi-bot v1.3 — Guide Lengkap & Spesifikasi Arsitektur
 
-> **Release**: 5 Oktober 2026 | **Status**: Production Ready — 126/126 Tests PASS (100% Green)
+> **Release**: 16 Oktober 2026 | **Status**: Production Ready — 128/128 Tests PASS (100% Green)
 > **Repo**: `https://github.com/naufalhalims/komdigi-bot`
-> **Lokasi Deploy**: Windows Mini PC — `C:\Coding\Komdigi`
+> **Cluster**: Hybrid VPS (Tencent Cloud Singapore) + Windows Mini PC Node
 
 ---
 
@@ -132,6 +132,29 @@ Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur
 
 ### Diagram Topologi Hybrid
 
+```mermaid
+flowchart TD
+    subgraph TailscaleMesh ["Jaringan Privat Terenkripsi WireGuard / Tailscale"]
+        subgraph VPS ["VPS Cloud (Singapore Node - 24/7 Engine)"]
+            PM2["PM2 Worker (komdigi-bot-worker :8080)"]
+            ROUTER["Local 9router LLM Gateway (:20128)"]
+            PM2 <-->|Latensi Intra-VPS ~1-2ms| ROUTER
+        end
+
+        subgraph MiniPCNode ["Mini PC Node (Residential Workhorse)"]
+            SERVICE["KomdigiResidentialProxy Service (:1080)"]
+            CHROME["Real Chrome CDP (:9224)"]
+        end
+
+        PM2 -->|SOCKS5 P2P Tunnel| SERVICE
+    end
+
+    subgraph RoutingEgress ["Kebijakan Egress (Dual-Mode)"]
+        SERVICE -->|Mode 1: IP Residensial ID| TARGET_LOCAL["Target Lokal / Anti-Bot Ketat (Komdigi, Marketplace)"]
+        PM2 -->|Mode 2: Direct Clean Egress| TARGET_GLOBAL["Target Global (Democaptcha AS9123 Rusia, 2captcha)"]
+    end
+```
+
 ```text
 +-----------------------------------------------------------------------------------+
 |                           PRIVATE TAILSCALE MESH NETWORK                          |
@@ -142,8 +165,8 @@ Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur
 |  |                                     | ---------> |                          |  |
 |  | - PM2 Daemon: komdigi-bot-worker    |   :1080    | - start_residential_     |  |
 |  | - Orchestrator & Task Queue         |            |   proxy.py (Port 1080)   |  |
-|  | - Jev System 1 Decision Gate        |            | - Real Chrome CDP Engine |  |
-|  | - Local 9router LLM (Port 20128)    |            |   (Port 9224)            |  |
+|  | - Jev System 1 Decision Gate        |            | - NSSM Windows Service   |  |
+|  | - Local 9router LLM (Port 20128)    |            | - Real Chrome CDP Engine |  |
 |  |   Latency: 1-2ms                    |            | - Residential IP Egress  |  |
 |  +-------------------------------------+            +--------------------------+  |
 |                     |                                             |               |
@@ -156,16 +179,25 @@ Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur
              +-----------------+                           +------------------+
 ```
 
+### Kebijakan Egress Jaringan (Dual-Mode Egress)
+
+1. **Mode Residensial (`proxy = "socks5://<mini-pc>:1080"`)**:
+   - **Kapan Digunakan**: Situs domestik Indonesia, portal pemerintahan (Komdigi/TrustPositif), marketplace, e-commerce, atau situs perbankan yang secara aktif memblokir IP Datacenter/Cloud.
+   - **Alur**: Worker di VPS membuka browser Chromium dengan argumen SOCKS5 mengarah ke Mini PC via Tailscale. Situs target membaca seluruh sesi berasal dari ISP perumahan asli Indonesia.
+
+2. **Mode Direct VPS Clean Egress (`proxy = ""`)**:
+   - **Kapan Digunakan**: Situs target luar negeri atau layanan benchmark solver global (misal: `democaptcha.com` yang di-host di Rusia AS9123 atau `2captcha.com`).
+   - **Alasan**: ISP residensial Indonesia atau Cloudflare WARP lokal sering memblokir atau mereset koneksi TCP ke subnet IP negara tertentu. Jalur langsung VPS Singapore memiliki konektivitas internasional stabil (HTTP 200 dalam 1,0s).
+
 ### Panduan Implementasi & Deployment
 
-1. **Jalankan SOCKS5 Residential Proxy di Mini PC**:
-   ```powershell
-   # Menjalankan proxy daemon di port 1080 (bind ke seluruh interface/Tailscale)
-   uv run python start_residential_proxy.py --host 0.0.0.0 --port 1080
-   
-   # Atau gunakan watchdog batch script:
-   .\run_residential_proxy.bat
-   ```
+1. **Memasang Residential Proxy sebagai Windows Service di Mini PC (1-Klik via NSSM)**:
+   - Klik kanan pada file [`install_service.bat`](install_service.bat) dan pilih **"Run as administrator"**.
+   - Script akan otomatis mendaftarkan service Windows `KomdigiResidentialProxy` menggunakan NSSM 64-bit:
+     - Startup Type: **Automatic (`SERVICE_AUTO_START`)** — menyala otomatis saat boot.
+     - Auto-Restart: Delay 5 detik jika terjadi gangguan.
+     - Log: `outputs/logs/residential_service.log` dengan rotasi 10 MB.
+   - Untuk mencabut service: Klik kanan [`uninstall_service.bat`](uninstall_service.bat) -> "Run as administrator".
 
 2. **Deploy Worker 24/7 di VPS Cloud**:
    ```bash
@@ -305,6 +337,16 @@ uv run python start_service.py --host 0.0.0.0 --port 8080
 
 ## Changelog
 
+### v1.3 (16 Oktober 2026)
+
+- **Democaptcha Companion Fields Auto-Fill**: Solver [`image_ocr.py`](src/komdigi_bot/solvers/image_ocr.py) otomatis mendeteksi dan mengisi field formulir pendamping yang wajib (seperti `<textarea name="message">` pada democaptcha) sebelum submit.
+- **Fast Non-Blocking Submit (`no_wait_after=True`)**: Mencegah bottleneck timeout 30 detik pada Playwright di seluruh solver (`image_ocr`, `text_reasoning`, `click_coords`, `api_solver`) saat form reload.
+- **Cross-Platform Chrome CDP Runner**: [`chrome_cdp_runner.py`](chrome_cdp_runner.py) kini mendukung deteksi otomatis path Chrome/Chromium lintas platform (Windows dan Linux Ubuntu VPS).
+- **Enriched Worker Payload**: Antrean worker kini menyertakan token hasil jawaban (`answer`), bukti `screenshot`, dan `total_latency_ms` yang akurat pada hasil job `/job/{id}`.
+- **NSSM Windows Service 1-Klik**: Disediakan launcher [`install_service.bat`](install_service.bat) dan script PowerShell otomatis untuk memasang Residential Proxy sebagai Windows Service permanen.
+- **Sanitasi Repositori & Ponytail Refactoring**: Pembersihan dead code (-282 baris), pengelompokan benchmark runner bersih di `scripts/run_live_benchmark.py`, serta audit total rahasia dan kredensial untuk persiapan push ke GitHub Organization.
+- **Unit Test Suite**: Diperluas menjadi **128/128 tests lulus (100% green)**.
+
 ### v1.2 (5 Oktober 2026)
 
 - **Integrasi TypeSafe AI Jev (System 1)**: Mengaktifkan pre-gating `noul` dan konfirmasi rute engine `choice` di [`orchestrator.py`](file:///c:/Coding/Komdigi/src/komdigi_bot/orchestrator.py) menggunakan `TYPESAFE_API_KEY`.
@@ -348,5 +390,5 @@ uv run python chrome_cdp_runner.py https://solvecaptcha.com/demo/cloudflare-turn
 
 ---
 
-*komdigi-bot v1.2 — Multi-Tier Intelligent CAPTCHA Solving Architecture*  
-*Author: naufalhalims | Release: 5 Oktober 2026 | 126/126 Tests Passing*
+*komdigi-bot v1.3 — Multi-Tier Intelligent CAPTCHA Solving Architecture*  
+*Author: naufalhalims | Release: 16 Oktober 2026 | 128/128 Tests Passing*

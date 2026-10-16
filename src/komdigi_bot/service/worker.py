@@ -169,6 +169,15 @@ class Worker:
                 orch = Orchestrator(headless=True, **self._orch_kw)
                 run_result = orch.run(job.url)
 
+                answer = ""
+                screenshot = ""
+                for att in reversed(run_result.attempts):
+                    if att.passed or not answer:
+                        answer = att.answer
+                        screenshot = att.screenshot_path
+                        if att.passed:
+                            break
+
                 result = {
                     "family": run_result.family,
                     "engine": run_result.engine,
@@ -177,7 +186,9 @@ class Worker:
                         if hasattr(run_result.final_status, "value")
                         else str(run_result.final_status)
                     ),
-                    "latency_ms": getattr(run_result, "latency_ms", None),
+                    "answer": answer,
+                    "screenshot": screenshot,
+                    "latency_ms": round(getattr(run_result, "total_latency_ms", 0.0), 1),
                 }
 
                 # Network error check dari run_result.error

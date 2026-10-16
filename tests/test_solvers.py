@@ -307,6 +307,38 @@ class TestImageOCRSolver:
         assert result.status == SolveStatus.FAIL
         assert "unparseable" in result.message
 
+    def test_companion_fields_populated_when_empty(self, tmp_path: Path) -> None:
+        from komdigi_bot.solvers.image_ocr import ImageOCRSolver
+
+        llm = MagicMock(spec=LLMClient)
+        llm._vision_model = "v-model"
+        llm.ask_vision.return_value = "ABC12"
+
+        page = _mock_page(content="Captcha is passed successfully")
+        page.locator.return_value.first.screenshot = MagicMock()
+        img_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00" * 20
+        (tmp_path / "captcha-image.png").write_bytes(img_bytes)
+
+        # Mock textarea locator
+        ta_mock = MagicMock()
+        ta_mock.is_visible.return_value = True
+        ta_mock.input_value.return_value = ""
+
+        def locator_router(selector: str):
+            if selector == "textarea":
+                loc = MagicMock()
+                loc.all.return_value = [ta_mock]
+                return loc
+            return page.locator.return_value
+
+        page.locator.side_effect = locator_router
+
+        solver = ImageOCRSolver(llm)
+        result = solver.solve(page, tmp_path)
+
+        assert result.status == SolveStatus.PASS
+        ta_mock.fill.assert_called_once_with("Automated QA inquiry verification.")
+
 
 # ===========================================================================
 # ClickCoordsSolver

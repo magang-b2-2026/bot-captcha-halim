@@ -23,6 +23,8 @@ build/
 outputs/
 *.log
 data/sessions/
+data/evidence/
+data/runs/
 
 # Vendor References
 vendor-reference/

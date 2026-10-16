@@ -16,13 +16,14 @@ Contoh Penggunaan:
 from __future__ import annotations
 
 import logging
+import os
 import time
 from typing import Any, Optional
 import httpx
 
 logger = logging.getLogger("komdigi_client")
 
-DEFAULT_SERVICE_URL = "http://100.66.99.77:8080"
+DEFAULT_SERVICE_URL = os.getenv("KOMDIGI_SERVICE_URL", "http://127.0.0.1:8080")
 
 
 class KomdigiCaptchaClient:

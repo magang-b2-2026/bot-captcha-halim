@@ -1,8 +1,8 @@
 """
 start_residential_proxy.py — Entry point untuk menjalankan Residential SOCKS5 Proxy pada Mini PC.
 
-Menyediakan egress proxy residential bagi worker 24/7 di VPS Singapore
-melalui jaringan privat terenkripsi Tailscale (IP: 100.118.42.78).
+Menyediakan egress proxy residential bagi worker 24/7 di VPS
+melalui jaringan privat terenkripsi Tailscale / WireGuard mesh.
 
 Usage:
     uv run python start_residential_proxy.py [--host 0.0.0.0] [--port 1080]
@@ -53,7 +53,7 @@ def setup_logging(log_dir: Path = Path("outputs/logs")) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="komdigi-bot residential SOCKS5 proxy server")
-    parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0 / 100.118.42.78)")
+    parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=1080, help="Bind port (default: 1080)")
     args = parser.parse_args()
 
@@ -63,7 +63,7 @@ def main() -> None:
     logger.info("=" * 60)
     logger.info("KOMDIGI Residential SOCKS5 Proxy Starting")
     logger.info("Listening on: %s:%d", args.host, args.port)
-    logger.info("Tailscale Access: socks5://100.118.42.78:%d", args.port)
+    logger.info("Access: socks5://<tailscale-ip>:%d", args.port)
     logger.info("=" * 60)
 
     from komdigi_bot.service.residential_proxy import run_server

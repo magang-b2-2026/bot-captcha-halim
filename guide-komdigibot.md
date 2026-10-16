@@ -112,7 +112,7 @@ Sistem menerapkan arsitektur *Decoupled Tool Selection and Execution* (Tri-Tier 
 - **Konfigurasi**: `TYPESAFE_API_KEY` aktif pada berkas [`.env`](file:///c:/Coding/Komdigi/.env).
 
 ### Lapisan 2: LLM Inference Engine (System 2 Reasoning & Vision)
-- **Primer**: 9router VPS Tencent Cloud Singapore (`http://43.128.69.86:20128/v1`) menggunakan model `ag/gemini-3.8-flash-high`.
+- **Primer**: 9router LLM Gateway (`http://<vps-endpoint>:20128/v1` atau `http://localhost:20128/v1`) menggunakan model `ag/gemini-3.8-flash-high`.
 - **Sekunder (Fallback)**: Google AI Studio (`gemini-3.5-flash-lite`, kuota gratis 1.500 request/hari) dan Vikey.ai (`claude-fable-5` & `deepseek-v4.1-flash`).
 
 ---
@@ -123,12 +123,12 @@ Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur
 
 | Komponen | Opsi 1: Mini PC Standalone Node | Opsi 2: Hybrid VPS 24/7 + Mini PC Residential Egress (Rekomendasi) |
 |---|---|---|
-| **Lokasi Worker / Service** | Windows Mini PC Lokal | Ubuntu 22.04 LTS (VPS Tencent Cloud Singapore) |
+| **Lokasi Worker / Service** | Windows Mini PC Lokal | Ubuntu 22.04 LTS (VPS Cloud Singapore / Remote) |
 | **Inference 9router LLM** | Lintas negara (~35-50ms) | Intra-datacenter (~1-2ms ultralow latency) |
 | **Reputasi IP Browser** | Residensial Asli (Sangat Terpercaya) | Egress di-tunnel ke IP Residensial Mini PC via Tailscale |
-| **Konektivitas Antar-Node** | Standalone | Private Mesh WireGuard Tailscale (`100.118.42.78` <-> `100.66.99.77`) |
+| **Konektivitas Antar-Node** | Standalone | Private Mesh WireGuard Tailscale (`<mini-pc-ip>` <-> `<vps-ip>`) |
 | **Bypass Anti-Bot** | 100% via Chrome fisik lokal | 100% via SOCKS5 proxy residensial & remote CDP |
-| **Konfigurasi Proxy** | Opsional (`PROXY=""`) | Wajib (`PROXY="socks5://100.118.42.78:1080"`) |
+| **Konfigurasi Proxy** | Opsional (`PROXY=""`) | Wajib (`PROXY="socks5://<mini-pc-tailscale-ip>:1080"`) |
 
 ### Diagram Topologi Hybrid
 
@@ -137,14 +137,14 @@ Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur
 |                           PRIVATE TAILSCALE MESH NETWORK                          |
 |                                                                                   |
 |  +-------------------------------------+   SOCKS5   +--------------------------+  |
-|  |       VPS SINGAPORE (24/7 Core)     |  Tunnel    |    MINI PC GMKTEC M6     |  |
-|  |   IP: 100.66.99.77 (43.128.69.86)   |  (P2P)     |     IP: 100.118.42.78    |  |
+|  |       VPS CLOUD (24/7 Core Engine)  |  Tunnel    |    MINI PC WORKHORSE     |  |
+|  |     IP: <vps-tailscale-ip>          |  (P2P)     |  IP: <mini-pc-tailscale> |  |
 |  |                                     | ---------> |                          |  |
 |  | - PM2 Daemon: komdigi-bot-worker    |   :1080    | - start_residential_     |  |
 |  | - Orchestrator & Task Queue         |            |   proxy.py (Port 1080)   |  |
 |  | - Jev System 1 Decision Gate        |            | - Real Chrome CDP Engine |  |
 |  | - Local 9router LLM (Port 20128)    |            |   (Port 9224)            |  |
-|  |   Latency: 1-2ms                    |            | - Telkom/IndiHome Egress |  |
+|  |   Latency: 1-2ms                    |            | - Residential IP Egress  |  |
 |  +-------------------------------------+            +--------------------------+  |
 |                     |                                             |               |
 +---------------------|---------------------------------------------|---------------+
@@ -152,7 +152,7 @@ Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur
                       v (Inference)                                 v (Web Egress)
              +-----------------+                           +------------------+
              | 9router LLM API |                           | Target Websites  |
-             | (Tencent Cloud) |                           | (Democaptcha dll)|
+             | (OpenAI-Compat) |                           | (Democaptcha dll)|
              +-----------------+                           +------------------+
 ```
 
@@ -167,21 +167,19 @@ Bot mendukung dua model penyebaran produksi dengan fokus utama pada **Arsitektur
    .\run_residential_proxy.bat
    ```
 
-2. **Deploy Worker 24/7 di VPS Singapore**:
+2. **Deploy Worker 24/7 di VPS Cloud**:
    ```bash
-   # Masuk ke VPS Singapore via SSH Tailscale
-   ssh ubuntu@100.66.99.77
+   # Masuk ke VPS via SSH Tailscale
+   ssh ubuntu@<vps-tailscale-ip>
    
    # Jalankan skrip instalasi dan deployment otomatis
-   curl -fsSL https://raw.githubusercontent.com/naufalhalims/komdigi-bot/master/deploy/setup_vps.sh | bash
-   # Atau jika repo sudah ada:
    cd /home/ubuntu/apps/komdigi-bot && bash deploy/setup_vps.sh
    ```
 
 3. **Verifikasi Egress IP dari VPS**:
    ```bash
    # Menjalankan diagnostik untuk memastikan IP publik VPS terdeteksi sebagai IP Mini PC
-   python deploy/verify_egress.py socks5://100.118.42.78:1080
+   python deploy/verify_egress.py socks5://<mini-pc-tailscale-ip>:1080
    ```
 
 
@@ -310,7 +308,7 @@ uv run python start_service.py --host 0.0.0.0 --port 8080
 ### v1.2 (5 Oktober 2026)
 
 - **Integrasi TypeSafe AI Jev (System 1)**: Mengaktifkan pre-gating `noul` dan konfirmasi rute engine `choice` di [`orchestrator.py`](file:///c:/Coding/Komdigi/src/komdigi_bot/orchestrator.py) menggunakan `TYPESAFE_API_KEY`.
-- **Dukungan 9router VPS Singapore**: Primary LLM diarahkan ke Tencent Cloud Singapore (`http://43.128.69.86:20128/v1`) dengan model `ag/gemini-3.8-flash-high`.
+- **Dukungan 9router LLM Endpoint**: Primary LLM diarahkan ke 9router / OpenAI-compatible endpoint (`http://<vps-endpoint>:20128/v1`) dengan model `ag/gemini-3.8-flash-high`.
 - **Dukungan Math CAPTCHA**: Prompt [`image_ocr.py`](file:///c:/Coding/Komdigi/src/komdigi_bot/solvers/image_ocr.py) diperluas untuk menghitung persamaan aritmatika otomatis (misal: `democaptcha.com` math-image).
 - **Indikator Sukses Adaptif**: [`base.py`](file:///c:/Coding/Komdigi/src/komdigi_bot/solvers/base.py) diperbarui dengan `SUCCESS_MARKERS` multi-platform.
 - **Arsitektur Hybrid & Egress Proxy**: Dukungan field `proxy` pada `Settings` untuk integrasi SOCKS5/HTTP proxy residensial.

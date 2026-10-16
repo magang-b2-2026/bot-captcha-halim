@@ -5,9 +5,9 @@
 set -euo pipefail
 
 APP_DIR="/home/ubuntu/apps/komdigi-bot"
-REPO_URL="https://github.com/naufalhalims/komdigi-bot.git"
-MINI_PC_TAILSCALE_IP="100.118.42.78"
-PROXY_PORT="1080"
+REPO_URL="${REPO_URL:-https://github.com/organization/komdigi-bot.git}"
+MINI_PC_TAILSCALE_IP="${MINI_PC_TAILSCALE_IP:-100.x.y.z}"
+PROXY_PORT="${PROXY_PORT:-1080}"
 
 echo "=== [1/6] Preparing Application Directory ==="
 mkdir -p /home/ubuntu/apps
@@ -41,14 +41,14 @@ if [ ! -f .env ]; then
 # KOMDIGI Bot Environment Configuration (VPS Singapore 24/7 Node)
 # ==============================================================
 
-# LLM Endpoint: 9router running locally on VPS Singapore (1ms latency)
-LLM_BASE_URL=http://127.0.0.1:20128/v1
-LLM_API_KEY=sk-18f5927fd13f0bd7-m20ctj-23db3de2
-LLM_MODEL_VISION=ag/gemini-3.8-flash-high
-LLM_MODEL_REASONING=ag/gemini-3.8-flash-high
+# LLM Endpoint: Local 9router or remote OpenAI-compatible gateway
+LLM_BASE_URL=${LLM_BASE_URL:-http://127.0.0.1:20128/v1}
+LLM_API_KEY=${LLM_API_KEY:-your_llm_api_key_here}
+LLM_MODEL_VISION=${LLM_MODEL_VISION:-ag/gemini-3.8-flash-high}
+LLM_MODEL_REASONING=${LLM_MODEL_REASONING:-ag/gemini-3.8-flash-high}
 
 # TypeSafe AI System One decision pre-gate (Jev)
-TYPESAFE_API_KEY=apikey_24732febee111d442abaa76c1029ae84d6d_d38c538c2781a506310d446ab85d9440af7f8e8ef02f62fbdf6b565557c2205a
+TYPESAFE_API_KEY=${TYPESAFE_API_KEY:-your_typesafe_api_key_here}
 
 # Hybrid Residential Egress Proxy (Routing through Mini PC via Tailscale Mesh)
 PROXY=socks5://${MINI_PC_TAILSCALE_IP}:${PROXY_PORT}
@@ -57,7 +57,7 @@ SOLVER_POLICY=hybrid
 INTERVAL_SECONDS=1800
 JITTER_SECONDS=180
 EOF
-    echo "Created .env with local 9router and Mini PC Tailscale residential proxy."
+    echo "Created .env template. Please verify credentials in $APP_DIR/.env."
 fi
 
 echo "=== [4/6] Verifying Connectivity to Mini PC Residential Proxy ==="

@@ -1,12 +1,28 @@
+# Environment & Secrets
 .env
+*.env.local
+
+# Virtual Environment & Python cache
 .venv/
 __pycache__/
-vendor-reference/
-outputs/
-.omo/evidence/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# IDE & Agent Caches
+.omo/
+.codegraph/
 .ruff_cache/
 .pytest_cache/
-*.pyc
 .playwright-mcp/
-*.egg-info/
-.omo/run-continuation/
+
+# Runtime data & logs
+outputs/
+*.log
+data/sessions/
+
+# Vendor References
+vendor-reference/
